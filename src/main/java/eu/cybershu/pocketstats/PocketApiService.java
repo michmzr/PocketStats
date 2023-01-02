@@ -1,6 +1,7 @@
 package eu.cybershu.pocketstats;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import eu.cybershu.pocketstats.model.PostmanGetResponse;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
@@ -41,8 +42,7 @@ public class PocketApiService {
     @Value("${auth.pocket.url.get}")
     private String pocketGetUrl;
 
-    private Set<String> activeAuthSessions ;
-
+    private final Set<String> activeAuthSessions ;
 
     public PocketApiService() {
         this.client =  HttpClient.newBuilder()
@@ -59,10 +59,10 @@ public class PocketApiService {
     }
 
     /**
-     * @return
-     * @url https://getpocket.com/developer/docs/authentication
+     * @return authorisation code
+     * @link <a href="https://getpocket.com/developer/docs/authentication">pocket api auth</a>
      */
-    public String obtainRequestToken() throws IOException, InterruptedException {
+    public String obtainAuthCode() throws IOException, InterruptedException {
         Map<Object, Object> data = new HashMap<>();
         data.put("consumer_key", pocketConsumerKey);
         data.put("redirect_uri", pocketRedirectUrl);
@@ -163,8 +163,8 @@ public class PocketApiService {
         log.debug("response: {}", response.body());
 
         if(response.statusCode() == 200) {
-            var responseCode = mapper.readTree(response.body());
-            return responseCode.toPrettyString();
+            var pocketResponse = mapper.readValue(response.body(), PostmanGetResponse.class);
+            return pocketResponse.toString();
         } else {
             throw new IllegalArgumentException("Not acquired access token.");
         }
