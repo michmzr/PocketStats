@@ -6,6 +6,7 @@ import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import eu.cybershu.pocketstats.utils.LongToInstantConverter;
 import eu.cybershu.pocketstats.utils.StringBooleanToBoolean;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 
 import java.time.Instant;
 import java.util.HashMap;
@@ -16,6 +17,7 @@ import java.util.Map;
  */
 
 @Data
+@EqualsAndHashCode(of = {"url", "status", "timeAdded", "timeRead"})
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class ListItem {
@@ -54,8 +56,6 @@ public class ListItem {
     @JsonDeserialize(converter = LongToInstantConverter.class)
     private Instant timeFavorited;
 
-    @JsonProperty("sort_id")
-    private Integer sortId;
     @JsonProperty("resolved_title")
     private String resolvedTitle;
     @JsonProperty("resolved_url")

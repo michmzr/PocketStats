@@ -7,6 +7,9 @@ import lombok.Data;
 import java.util.HashMap;
 import java.util.Map;
 
+/**
+ * @link <a href="https://getpocket.com/developer/docs/v3/retrieve">get pocket api retrieve</a>
+ */
 @Data
 @JsonIgnoreProperties(ignoreUnknown = true)
 @JsonInclude(JsonInclude.Include.NON_NULL)
@@ -17,7 +20,7 @@ public class PostmanGetResponse {
     @JsonProperty("complete")
     private Integer complete;
     @JsonProperty("list")
-    private Map<String, ListItem> list;
+    private Map<String, ListItem> items;
     @JsonProperty("error")
     private Object error;
     @JsonProperty("search_meta")

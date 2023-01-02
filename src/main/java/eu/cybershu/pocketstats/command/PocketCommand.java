@@ -2,6 +2,7 @@ package eu.cybershu.pocketstats.command;
 
 import eu.cybershu.pocketstats.PocketApiService;
 import eu.cybershu.pocketstats.shell.ShellHelper;
+import eu.cybershu.pocketstats.stats.PocketStatPredicate;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.shell.standard.ShellComponent;
@@ -9,6 +10,7 @@ import org.springframework.shell.standard.ShellMethod;
 import org.springframework.shell.standard.ShellOption;
 
 import java.io.IOException;
+import java.util.Map;
 
 @ShellComponent
 public class PocketCommand {
@@ -41,10 +43,22 @@ public class PocketCommand {
     }
 
     @ShellMethod("Get current month records")
-    public void currentMonthRecords(@ShellOption({"-a", "--access-token"}) String accessToken) throws IOException,
+    public void currentMonth(@ShellOption({"-a", "--access-token"}) String accessToken) throws IOException,
             InterruptedException {
-        shellHelper.print(
-                pocketApiService.getCurrentMonth(accessToken)
-        );
+        Map<PocketStatPredicate, Integer> stats = pocketApiService.getCurrentMonth(accessToken);
+
+        printStats(stats);
+    }
+
+    @ShellMethod("Get previous year stats")
+    public void previousYear(@ShellOption({"-a", "--access-token"}) String accessToken) throws IOException,
+            InterruptedException {
+        Map<PocketStatPredicate, Integer> stats = pocketApiService.getLastYearItems(accessToken);
+
+        printStats(stats);
+    }
+
+    private void printStats(Map<PocketStatPredicate, Integer> stats) {
+        stats.forEach((pred, counter)-> shellHelper.print(pred.getName() + ":" + counter));
     }
 }
