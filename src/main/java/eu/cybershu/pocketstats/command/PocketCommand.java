@@ -22,7 +22,7 @@ public class PocketCommand {
 
     @ShellMethod("Authorize")
     public void authorize() throws IOException, InterruptedException {
-        final String code = pocketApiService.obtainRequestToken();
+        final String code = pocketApiService.obtainAuthCode();
 
         shellHelper.printInfo("Your code: " + code);
         pocketApiService.registerAuthSession(code);
