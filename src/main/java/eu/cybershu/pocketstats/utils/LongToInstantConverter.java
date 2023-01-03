@@ -6,7 +6,7 @@ import java.time.Instant;
 
 public class LongToInstantConverter extends StdConverter<Long, Instant> {
     public Instant convert(final Long value) {
-        if(value == null)
+        if(value == null || value == 0)
             return null;
         else
             return Instant.ofEpochSecond(value);

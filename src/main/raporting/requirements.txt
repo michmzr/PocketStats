@@ -1,3 +1,5 @@
-pandas
+pandas:1.5.2
 pymongo:4.3.3
-jupyter
+jupyter:1.0.0
+matplotlib:3.6.2
+seaborn:0.12.2
