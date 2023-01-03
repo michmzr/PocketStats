@@ -1,4 +1,4 @@
-package eu.cybershu.pocketstats.model;
+package eu.cybershu.pocketstats.model.api;
 
 import com.fasterxml.jackson.annotation.JsonValue;
 

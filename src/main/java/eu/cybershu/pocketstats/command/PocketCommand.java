@@ -58,6 +58,13 @@ public class PocketCommand {
         printStats(stats);
     }
 
+    @ShellMethod("Items left to read")
+    public void toRead(@ShellOption({"-a", "--access-token"}) String accessToken) throws IOException,
+            InterruptedException {
+        int counter = pocketApiService.itemsToRead(accessToken);
+        shellHelper.print("Items to read:" + counter);
+    }
+
     private void printStats(Map<PocketStatPredicate, Integer> stats) {
         stats.forEach((pred, counter)-> shellHelper.print(pred.getName() + ":" + counter));
     }

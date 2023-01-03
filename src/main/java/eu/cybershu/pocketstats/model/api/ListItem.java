@@ -1,5 +1,5 @@
 
-package eu.cybershu.pocketstats.model;
+package eu.cybershu.pocketstats.model.api;
 
 import com.fasterxml.jackson.annotation.*;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;

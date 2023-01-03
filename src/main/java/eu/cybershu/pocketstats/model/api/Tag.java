@@ -1,5 +1,5 @@
 
-package eu.cybershu.pocketstats.model;
+package eu.cybershu.pocketstats.model.api;
 
 import com.fasterxml.jackson.annotation.*;
 import lombok.Data;
@@ -7,26 +7,15 @@ import lombok.Data;
 import java.util.HashMap;
 import java.util.Map;
 
-/**
- * @link <a href="https://getpocket.com/developer/docs/v3/retrieve">get pocket api retrieve</a>
- */
 @Data
 @JsonIgnoreProperties(ignoreUnknown = true)
 @JsonInclude(JsonInclude.Include.NON_NULL)
-public class PostmanGetResponse {
+public class Tag {
 
-    @JsonProperty("status")
-    private Integer status;
-    @JsonProperty("complete")
-    private Integer complete;
-    @JsonProperty("list")
-    private Map<String, ListItem> items;
-    @JsonProperty("error")
-    private Object error;
-    @JsonProperty("search_meta")
-    private SearchMeta searchMeta;
-    @JsonProperty("since")
-    private Integer since;
+    @JsonProperty("item_id")
+    private String itemId;
+    @JsonProperty("tag")
+    private String tag;
     @JsonIgnore
     private Map<String, Object> additionalProperties = new HashMap<>();
 

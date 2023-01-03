@@ -2,12 +2,11 @@ package eu.cybershu.pocketstats;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
-
+import org.springframework.data.mongodb.repository.config.EnableMongoRepositories;
+@EnableMongoRepositories
 @SpringBootApplication
-public class PocketstatsApplication {
-
+public class PocketStatsApplication{
 	public static void main(String[] args) {
-		SpringApplication.run(PocketstatsApplication.class, args);
+		SpringApplication.run(PocketStatsApplication.class, args);
 	}
-
 }

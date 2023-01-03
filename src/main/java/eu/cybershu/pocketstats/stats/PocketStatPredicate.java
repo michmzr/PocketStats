@@ -1,6 +1,6 @@
 package eu.cybershu.pocketstats.stats;
 
-import eu.cybershu.pocketstats.model.ListItem;
+import eu.cybershu.pocketstats.model.api.ListItem;
 
 import java.time.Instant;
 

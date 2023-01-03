@@ -1,8 +1,10 @@
 package eu.cybershu.pocketstats;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import eu.cybershu.pocketstats.model.PostmanGetResponse;
+import eu.cybershu.pocketstats.model.api.ListItem;
+import eu.cybershu.pocketstats.model.api.PostmanGetResponse;
 import eu.cybershu.pocketstats.stats.PocketStatPredicate;
+import eu.cybershu.pocketstats.stats.ToReadPredicate;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -144,6 +146,47 @@ public class PocketApiService {
     public String generateLoginUrl(String code){
         return String.format(this.pocketAuthorizeUrl + "?request_token=%s&redirect_uri=%s", code,
                 pocketRedirectUrl + "?sessionId="+code);
+    }
+
+    //Items to read
+    public int itemsToRead(String accessToken) throws IOException, InterruptedException {
+        Map<Object, Object> data = new HashMap<>();
+        data.put("consumer_key", pocketConsumerKey);
+        data.put("access_token",accessToken);
+        data.put("state", "unread");
+        data.put("detailType", "complete");
+
+        String payload = mapper.writeValueAsString(data);
+        HttpRequest request = HttpRequest.newBuilder()
+                .POST(HttpRequest.BodyPublishers.ofString(payload))
+                .uri(URI.create(pocketGetUrl))
+                .header("Content-Type", "application/json")
+                .header("X-accept", "application/json")
+                .build();
+
+        HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
+
+        // print status code
+        log.debug("status: {}", response.statusCode());
+
+        // print response body
+        log.debug("response: {}", response.body());
+
+        if(response.statusCode() == 200) {
+            var pocketResponse = mapper.readValue(response.body(), PostmanGetResponse.class);
+
+            ToReadPredicate predicate = new ToReadPredicate();
+            var items = pocketResponse.getItems();
+            int counter = 0;
+            for (Map.Entry<String, ListItem> entry : items.entrySet()) {
+                ListItem item = entry.getValue();
+                counter += predicate.test(item, null) ? 1 : 0;
+            }
+
+            return counter;
+        } else {
+            throw new IllegalArgumentException("Not acquired access token.");
+        }
     }
 
     public Map<PocketStatPredicate, Integer> getLastYearItems(String accessToken) throws IOException,

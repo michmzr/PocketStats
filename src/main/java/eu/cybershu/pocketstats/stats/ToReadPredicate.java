@@ -7,19 +7,14 @@ import org.springframework.stereotype.Component;
 import java.time.Instant;
 
 @Component
-public class DeletedArticlePredicate implements PocketStatPredicate{
+public class ToReadPredicate implements PocketStatPredicate{
     @Override
     public String getName() {
-        return "Deleted items";
+        return "To read";
     }
 
     @Override
     public Boolean test(ListItem item, Instant sinceWhen) {
-        return item.getStatus() == ItemStatus.DELETED;
-    }
-
-    @Override
-    public int hashCode() {
-        return getName().hashCode() + getClass().hashCode();
+        return item.getStatus().equals(ItemStatus.TO_READ);
     }
 }

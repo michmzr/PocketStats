@@ -9,13 +9,26 @@ auth:
     consumer-key: ${POCKET_CONSUMER_KEY}
     redirect_uri: http://localhost:8080/pocket/auth/token
 
-shell.out.info: CYAN
-shell.out.success: GREEN
-shell.out.warning: YELLOW
-shell.out.error: RED
+shell.out:
+  info: CYAN
+  success: GREEN
+  warning: YELLOW
+  error: RED
 
 management:
   endpoints:
     web:
       exposure:
         include: [ 'configprops', 'mappings', 'health', 'info', 'logfile', 'loggers', 'endpoints' ]
+
+spring:
+  datasource.driver-class-name: com.mysql.jdbc.Driver
+  data:
+    mongodb:
+      username: admin
+      password: admin
+      database: db
+      authentication-database: admin
+      auto-index-creation: true
+      host: localhost
+      port: 27017
