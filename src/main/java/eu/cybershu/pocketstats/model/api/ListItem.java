@@ -22,7 +22,7 @@ import java.util.Map;
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class ListItem {
     @JsonProperty("item_id")
-    private String itemId;
+    private String id;
     @JsonProperty("resolved_id")
     private String resolvedId;
     @JsonProperty("given_url")
@@ -34,9 +34,6 @@ public class ListItem {
     @JsonProperty("favorite")
     private Boolean favorite;
 
-    /*
-    0, 1, 2 - 1 if the item is archived - 2 if the item should be deleted
-     */
     @JsonProperty("status")
     private ItemStatus status;
 

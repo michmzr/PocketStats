@@ -13,7 +13,7 @@ import java.util.Map;
 @Data
 @JsonIgnoreProperties(ignoreUnknown = true)
 @JsonInclude(JsonInclude.Include.NON_NULL)
-public class PostmanGetResponse {
+public class PocketGetResponse {
 
     @JsonProperty("status")
     private Integer status;

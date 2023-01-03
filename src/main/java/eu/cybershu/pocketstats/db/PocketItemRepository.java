@@ -7,5 +7,5 @@ import java.util.Optional;
 
 @Service
 public interface PocketItemRepository extends MongoRepository<PocketItem, String> {
-    Optional<PocketItem> findByItemId(String itemId);
+    Optional<PocketItem> findById(String id);
 }

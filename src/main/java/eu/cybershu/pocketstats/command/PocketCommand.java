@@ -10,6 +10,9 @@ import org.springframework.shell.standard.ShellMethod;
 import org.springframework.shell.standard.ShellOption;
 
 import java.io.IOException;
+import java.time.Instant;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.util.Map;
 
 @ShellComponent
@@ -56,6 +59,15 @@ public class PocketCommand {
         Map<PocketStatPredicate, Integer> stats = pocketApiService.getLastYearItems(accessToken);
 
         printStats(stats);
+    }
+
+    @ShellMethod("Import last years to DB")
+    public void importLastYears(@ShellOption({"-a", "--access-token"}) String accessToken,
+                                @ShellOption("-y") Integer years) throws IOException,
+            InterruptedException {
+        Instant sinceWhen = LocalDateTime.now().minusYears(years).atZone(ZoneId.systemDefault()).toInstant();
+
+        shellHelper.print("Imported: " + pocketApiService.importAllToDbSince(accessToken, sinceWhen));
     }
 
     @ShellMethod("Items left to read")

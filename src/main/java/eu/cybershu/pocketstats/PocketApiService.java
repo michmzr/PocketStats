@@ -1,10 +1,13 @@
 package eu.cybershu.pocketstats;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import eu.cybershu.pocketstats.db.PocketItemMapper;
+import eu.cybershu.pocketstats.db.PocketItemRepository;
 import eu.cybershu.pocketstats.model.api.ListItem;
-import eu.cybershu.pocketstats.model.api.PostmanGetResponse;
+import eu.cybershu.pocketstats.model.api.PocketGetResponse;
 import eu.cybershu.pocketstats.stats.PocketStatPredicate;
 import eu.cybershu.pocketstats.stats.ToReadPredicate;
+import eu.cybershu.pocketstats.utils.TimeUtils;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -15,8 +18,9 @@ import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
-import java.time.*;
-import java.time.temporal.TemporalAdjusters;
+import java.time.Duration;
+import java.time.Instant;
+import java.time.ZoneId;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -47,6 +51,11 @@ public class PocketApiService {
     @Autowired
     List<PocketStatPredicate> statPredicates;
 
+    @Autowired
+    PocketItemRepository pocketItemRepository;
+
+    PocketItemMapper pocketItemMapper;
+
     private final Set<String> activeAuthSessions ;
 
     public PocketApiService() {
@@ -56,6 +65,8 @@ public class PocketApiService {
                 .build();
         this.mapper =  new ObjectMapper();
         this.activeAuthSessions = ConcurrentHashMap.newKeySet();
+
+        pocketItemMapper = PocketItemMapper.INSTANCE;
     }
 
 
@@ -138,11 +149,6 @@ public class PocketApiService {
         }
     }
 
-    private static LocalDateTime getStartOfCurrentMonth() {
-        LocalDateTime time = LocalDateTime.now().with(TemporalAdjusters.firstDayOfMonth());
-        return time.with(LocalTime.of(0,0,1));
-    }
-
     public String generateLoginUrl(String code){
         return String.format(this.pocketAuthorizeUrl + "?request_token=%s&redirect_uri=%s", code,
                 pocketRedirectUrl + "?sessionId="+code);
@@ -173,7 +179,7 @@ public class PocketApiService {
         log.debug("response: {}", response.body());
 
         if(response.statusCode() == 200) {
-            var pocketResponse = mapper.readValue(response.body(), PostmanGetResponse.class);
+            var pocketResponse = mapper.readValue(response.body(), PocketGetResponse.class);
 
             ToReadPredicate predicate = new ToReadPredicate();
             var items = pocketResponse.getItems();
@@ -189,20 +195,59 @@ public class PocketApiService {
         }
     }
 
+    public Integer importAllToDbSince(String accessToken, Instant sinceWhen) throws IOException, InterruptedException {
+        var pocketResponse = sinceWhen(accessToken, sinceWhen);
+
+        var models =  pocketResponse
+                .getItems()
+                .values()
+                .stream()
+                .map(it -> pocketItemMapper.apiModelToDb(it))
+                .toList();
+
+
+        return pocketItemRepository.saveAll(models).size();
+    }
+
     public Map<PocketStatPredicate, Integer> getLastYearItems(String accessToken) throws IOException,
             InterruptedException {
         ZoneId zoneId = getZoneId();
-        Instant sinceWhen = getFirstDayOfLastYear().atZone(zoneId).toInstant();
-        return getSince(accessToken, sinceWhen);
+        Instant sinceWhen = TimeUtils.getFirstDayOfLastYear().atZone(zoneId).toInstant();
+        //todo end date - last day of year
+        return calcStatsSinceWhen(accessToken, sinceWhen);
     }
 
     public Map<PocketStatPredicate, Integer> getCurrentMonth(String accessToken) throws IOException, InterruptedException {
         ZoneId zoneId = getZoneId();
-        Instant sinceWhen = getStartOfCurrentMonth().atZone(zoneId).toInstant();
-        return getSince(accessToken, sinceWhen);
+        Instant sinceWhen = TimeUtils.getStartOfCurrentMonth().atZone(zoneId).toInstant();
+        return calcStatsSinceWhen(accessToken, sinceWhen);
     }
 
-    public Map<PocketStatPredicate, Integer> getSince(String accessToken, Instant sinceWhen) throws IOException,
+    public Map<PocketStatPredicate, Integer> calcStatsSinceWhen(String accessToken, Instant sinceWhen) throws IOException,
+            InterruptedException {
+        var pocketResponse = sinceWhen(accessToken, sinceWhen);
+
+        Map<PocketStatPredicate, Integer> stats = new HashMap<>();
+        statPredicates.forEach(predicate -> {
+            stats.put(predicate, 0);
+        });
+
+        var items = pocketResponse.getItems();
+            items.forEach((itemId, item) -> {
+                        try{
+                            statPredicates.forEach(predicate ->
+                                    stats.compute(predicate, (k, oldValue) ->
+                                            predicate.test(item, sinceWhen) ? oldValue +1 : oldValue));
+                        }catch (Exception e) {
+                            log.error("exception catched:", e);
+                        }
+            }
+        );
+
+        return stats;
+    }
+
+    public PocketGetResponse sinceWhen(String accessToken, Instant sinceWhen) throws IOException,
             InterruptedException {
         Map<Object, Object> data = new HashMap<>();
         data.put("consumer_key", pocketConsumerKey);
@@ -227,34 +272,13 @@ public class PocketApiService {
         log.debug("response: {}", response.body());
 
         if(response.statusCode() == 200) {
-            var pocketResponse = mapper.readValue(response.body(), PostmanGetResponse.class);
+            var pocketResponse = mapper.readValue(response.body(), PocketGetResponse.class);
 
-            Map<PocketStatPredicate, Integer> stats = new HashMap<>();
-            statPredicates.forEach(predicate -> {
-                stats.put(predicate, 0);
-            });
-
-            var items = pocketResponse.getItems();
-                items.forEach((itemId, item) -> {
-                            try{
-                                statPredicates.forEach(predicate ->
-                                        stats.compute(predicate, (k, oldValue) ->
-                                                predicate.test(item, sinceWhen) ? oldValue +1 : oldValue));
-                            }catch (Exception e) {
-                                log.error("exception catched:", e);
-                            }
-                }
-            );
-
-            return stats;
+            return pocketResponse;
         } else {
             throw new IllegalArgumentException("Not acquired access token.");
         }
     }
 
-    private LocalDateTime  getFirstDayOfLastYear() {
-        var now = LocalDateTime.now();
-        LocalDate lastyear =  Year.of(now.getYear()-1).atMonth(Month.JANUARY).atDay(1);
-        return LocalDateTime.of(lastyear, LocalTime.of(0,0,1));
-    }
+
 }
