@@ -2,9 +2,7 @@ package eu.cybershu.pocketstats.pocket;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import eu.cybershu.pocketstats.db.PocketItem;
-import eu.cybershu.pocketstats.db.PocketItemMapper;
-import eu.cybershu.pocketstats.db.PocketItemRepository;
+import eu.cybershu.pocketstats.db.*;
 import eu.cybershu.pocketstats.pocket.api.ApiXHeaders;
 import eu.cybershu.pocketstats.pocket.api.ListItem;
 import eu.cybershu.pocketstats.pocket.api.PocketGetResponse;
@@ -24,10 +22,7 @@ import java.net.http.HttpResponse;
 import java.time.Duration;
 import java.time.Instant;
 import java.time.ZoneId;
-import java.util.HashMap;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 @Slf4j
 @Service
@@ -36,6 +31,7 @@ public class PocketApiService {
     private final ObjectMapper mapper;
     private final List<PocketStatPredicate> statPredicates;
     private final PocketItemRepository pocketItemRepository;
+    private final MigrationStatusRepository migrationStatusRepository;
     private final PocketAuthorizationService authorizationService;
     private final PocketItemMapper pocketItemMapper;
     @Value("${auth.pocket.consumer-key}")
@@ -43,7 +39,8 @@ public class PocketApiService {
     @Value("${auth.pocket.url.get}")
     private String pocketGetUrl;
 
-    public PocketApiService(List<PocketStatPredicate> statPredicates, PocketItemRepository pocketItemRepository, PocketAuthorizationService authorizationService) {
+    public PocketApiService(List<PocketStatPredicate> statPredicates, PocketItemRepository pocketItemRepository, MigrationStatusRepository migrationStatusRepository, PocketAuthorizationService authorizationService) {
+        this.migrationStatusRepository = migrationStatusRepository;
         this.authorizationService = authorizationService;
         this.client = HttpClient.newBuilder().followRedirects(HttpClient.Redirect.NORMAL).connectTimeout(Duration.ofSeconds(20)).build();
         this.mapper = new ObjectMapper();
@@ -98,7 +95,15 @@ public class PocketApiService {
 
         var models = pocketResponse.items().values().stream().map(pocketItemMapper::apiToEntity).toList();
 
-        return pocketItemRepository.saveAll(models).size();
+        List<PocketItem> pocketItems = pocketItemRepository.saveAll(models);
+
+        MigrationStatus migrationStatus = new MigrationStatus();
+        migrationStatus.id(UUID.randomUUID().toString());
+        migrationStatus.date(Instant.now());
+        migrationStatus.migratedItems(pocketItems.size());
+        migrationStatusRepository.save(migrationStatus);
+
+        return pocketItems.size();
     }
 
     public int importAll() throws IOException, InterruptedException {
@@ -129,6 +134,12 @@ public class PocketApiService {
 
             offset += count;
         }
+
+        MigrationStatus migrationStatus = new MigrationStatus();
+        migrationStatus.id(UUID.randomUUID().toString());
+        migrationStatus.date(Instant.now());
+        migrationStatus.migratedItems(gotItems);
+        migrationStatusRepository.save(migrationStatus);
 
         return gotItems;
     }

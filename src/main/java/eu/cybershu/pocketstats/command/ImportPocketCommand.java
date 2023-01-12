@@ -1,5 +1,7 @@
 package eu.cybershu.pocketstats.command;
 
+import eu.cybershu.pocketstats.db.MigrationStatus;
+import eu.cybershu.pocketstats.db.MigrationStatusRepository;
 import eu.cybershu.pocketstats.db.PocketItemRepository;
 import eu.cybershu.pocketstats.pocket.PocketApiService;
 import eu.cybershu.pocketstats.shell.ShellHelper;
@@ -28,11 +30,13 @@ public class ImportPocketCommand extends SecuredCommand {
     private final PocketApiService pocketApiService;
 
     private final PocketItemRepository repository;
+    private final MigrationStatusRepository migrationStatusRepository;
 
-    public ImportPocketCommand(ShellHelper shellHelper, PocketApiService pocketApiService, PocketItemRepository repository) {
+    public ImportPocketCommand(ShellHelper shellHelper, PocketApiService pocketApiService, PocketItemRepository repository, MigrationStatusRepository migrationStatusRepository) {
         this.shellHelper = shellHelper;
         this.pocketApiService = pocketApiService;
         this.repository = repository;
+        this.migrationStatusRepository = migrationStatusRepository;
     }
 
     @ShellMethod("Import last years to DB")
@@ -41,6 +45,22 @@ public class ImportPocketCommand extends SecuredCommand {
         var sinceWhen = LocalDateTime.now().minusYears(years).withHour(0).withMinute(0).withSecond(1).atZone(ZoneId.systemDefault()).toInstant();
 
         shellHelper.print("Imported: " + pocketApiService.importAllToDbSince(sinceWhen));
+    }
+
+    @ShellMethod("Import items since last migration")
+    @ShellMethodAvailability("isUserAuthorized")
+    public void importFromLast() throws IOException, InterruptedException {
+        MigrationStatus status = migrationStatusRepository.findTopByOrderByDateDesc();
+
+        log.debug("import from last - status={}", status);
+
+        if (status == null) {
+            shellHelper.printInfo("No migration was done");
+        } else {
+            shellHelper.printInfo("Importing items since " + status.date());
+
+            shellHelper.print("Imported: " + pocketApiService.importAllToDbSince(status.date()));
+        }
     }
 
     @ShellMethod("Import all items from API to DB")
@@ -60,8 +80,6 @@ public class ImportPocketCommand extends SecuredCommand {
         shellHelper.print("Imported: " + pocketApiService.importAllToDbSince(sinceWhen));
     }
 
-
-    //todo import from any date
     @ShellMethod("Cleanup pocket items from database.")
     @ShellMethodAvailability("isUserAuthorized")
     public void cleanDb() {
