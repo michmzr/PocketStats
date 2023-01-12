@@ -1,6 +1,5 @@
 package eu.cybershu.pocketstats.command;
 
-import eu.cybershu.pocketstats.db.MigrationStatus;
 import eu.cybershu.pocketstats.db.MigrationStatusRepository;
 import eu.cybershu.pocketstats.db.PocketItemRepository;
 import eu.cybershu.pocketstats.pocket.PocketApiService;
@@ -50,17 +49,7 @@ public class ImportPocketCommand extends SecuredCommand {
     @ShellMethod("Import items since last migration")
     @ShellMethodAvailability("isUserAuthorized")
     public void importFromLast() throws IOException, InterruptedException {
-        MigrationStatus status = migrationStatusRepository.findTopByOrderByDateDesc();
-
-        log.debug("import from last - status={}", status);
-
-        if (status == null) {
-            shellHelper.printInfo("No migration was done");
-        } else {
-            shellHelper.printInfo("Importing items since " + status.date());
-
-            shellHelper.print("Imported: " + pocketApiService.importAllToDbSince(status.date()));
-        }
+        shellHelper.print("Imported: " + pocketApiService.importFromSinceLastUpdate());
     }
 
     @ShellMethod("Import all items from API to DB")
@@ -71,7 +60,8 @@ public class ImportPocketCommand extends SecuredCommand {
 
     @ShellMethod("Import items since date to DB")
     @ShellMethodAvailability("isUserAuthorized")
-    public void importSince(@ShellOption(value = {"-s", "--since"}, help = "Use date in DD-MM-YYYY format") @CheckDateFormat(pattern = EXPECTED_DATE_FORMAT) String date) throws IOException, InterruptedException {
+    public void importSince(@ShellOption(value = {"-s", "--since"}, help = "Use date in DD-MM-YYYY format")
+                            @CheckDateFormat(pattern = EXPECTED_DATE_FORMAT) String date) throws IOException, InterruptedException {
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern(EXPECTED_DATE_FORMAT);
         LocalDateTime dateTime = LocalDate.parse(date, formatter).atTime(0, 0, 1);
 

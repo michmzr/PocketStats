@@ -1,13 +1,11 @@
 package eu.cybershu.pocketstats.pocket;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import eu.cybershu.pocketstats.stats.PocketStatPredicate;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.net.URI;
@@ -19,7 +17,6 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.Duration;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
@@ -45,12 +42,9 @@ public class PocketAuthorizationService {
     @Value("${auth.pocket.url.access_token}")
     private String pocketAccessTokenRetrieveUrl;
 
-    @Value("${auth.pocket.url.get}")
-    private String pocketGetUrl;
-
     private Boolean isUserAuthorisating;
 
-    public PocketAuthorizationService(List<PocketStatPredicate> statPredicates) {
+    public PocketAuthorizationService() {
         this.client = HttpClient.newBuilder().followRedirects(HttpClient.Redirect.NORMAL).connectTimeout(Duration.ofSeconds(20)).build();
         this.mapper = new ObjectMapper();
         this.isUserAuthorisating = false;
@@ -128,7 +122,7 @@ public class PocketAuthorizationService {
         return pocketRedirectUrl;
     }
 
-    public void save(PocketUserCredentials pocketUserCredentials) throws FileNotFoundException {
+    public void save(PocketUserCredentials pocketUserCredentials) {
         try (FileOutputStream fileOutputStream = new FileOutputStream(CRED_FILE_PATH)) {
             fileOutputStream.write(mapper.writeValueAsBytes(pocketUserCredentials));
         } catch (IOException e) {

@@ -1,19 +1,30 @@
 package eu.cybershu.pocketstats.utils;
 
 import java.time.*;
-import java.time.temporal.TemporalAdjusters;
 
 public class TimeUtils {
-
-    public static LocalDateTime getFirstDayOfLastYear() {
-        var now = LocalDateTime.now();
-        LocalDate lastyear =  Year.of(now.getYear()-1).atMonth(Month.JANUARY).atDay(1);
-        return LocalDateTime.of(lastyear, LocalTime.of(0,0,1));
+    public static Instant instantTodayBegin() {
+        return OffsetDateTime
+                .now(ZoneOffset.UTC)
+                .with(LocalTime.of(0, 0, 1)).toInstant();
     }
 
-    public static LocalDateTime getStartOfCurrentMonth() {
-        LocalDateTime time = LocalDateTime.now().with(TemporalAdjusters.firstDayOfMonth());
-        return time.with(LocalTime.of(0,0,1));
+    public static Instant instantTodayEnd() {
+        return OffsetDateTime
+                .now(ZoneOffset.UTC)
+                .with(LocalTime.of(23, 59, 59)).toInstant();
+    }
+
+    public static LocalDateTime dayBegin(LocalDateTime localDateTime) {
+        return localDateTime.withHour(0).withMinute(0).withSecond(1);
+    }
+
+    public static LocalDateTime dayEnd(LocalDateTime localDateTime) {
+        return localDateTime.withHour(23).withMinute(59).withSecond(59);
+    }
+
+    public static Instant localDateTimeToInstant(LocalDateTime ldt) {
+        return ldt.atZone(getZoneId()).toInstant();
     }
 
     private static ZoneId getZoneId() {

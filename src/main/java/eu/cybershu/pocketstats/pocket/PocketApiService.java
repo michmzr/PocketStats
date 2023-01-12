@@ -6,9 +6,6 @@ import eu.cybershu.pocketstats.db.*;
 import eu.cybershu.pocketstats.pocket.api.ApiXHeaders;
 import eu.cybershu.pocketstats.pocket.api.ListItem;
 import eu.cybershu.pocketstats.pocket.api.PocketGetResponse;
-import eu.cybershu.pocketstats.stats.PocketStatPredicate;
-import eu.cybershu.pocketstats.stats.ToReadPredicate;
-import eu.cybershu.pocketstats.utils.TimeUtils;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
@@ -21,7 +18,6 @@ import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.time.Duration;
 import java.time.Instant;
-import java.time.ZoneId;
 import java.util.*;
 
 @Slf4j
@@ -29,7 +25,6 @@ import java.util.*;
 public class PocketApiService {
     private final HttpClient client;
     private final ObjectMapper mapper;
-    private final List<PocketStatPredicate> statPredicates;
     private final PocketItemRepository pocketItemRepository;
     private final MigrationStatusRepository migrationStatusRepository;
     private final PocketAuthorizationService authorizationService;
@@ -39,54 +34,25 @@ public class PocketApiService {
     @Value("${auth.pocket.url.get}")
     private String pocketGetUrl;
 
-    public PocketApiService(List<PocketStatPredicate> statPredicates, PocketItemRepository pocketItemRepository, MigrationStatusRepository migrationStatusRepository, PocketAuthorizationService authorizationService) {
+    public PocketApiService(PocketItemRepository pocketItemRepository, MigrationStatusRepository migrationStatusRepository, PocketAuthorizationService authorizationService) {
         this.migrationStatusRepository = migrationStatusRepository;
         this.authorizationService = authorizationService;
         this.client = HttpClient.newBuilder().followRedirects(HttpClient.Redirect.NORMAL).connectTimeout(Duration.ofSeconds(20)).build();
         this.mapper = new ObjectMapper();
         this.pocketItemMapper = PocketItemMapper.INSTANCE;
-        this.statPredicates = statPredicates;
         this.pocketItemRepository = pocketItemRepository;
     }
 
-    private static ZoneId getZoneId() {
-        return ZoneId.systemDefault();
-    }
+    public Integer importFromSinceLastUpdate() throws IOException, InterruptedException {
+        MigrationStatus status = migrationStatusRepository.findTopByOrderByDateDesc();
 
+        log.debug("import from last - status={}", status);
 
-    //Items to read
-    public int itemsToRead() throws IOException, InterruptedException {
-        Map<Object, Object> data = new HashMap<>();
-        data.put("consumer_key", pocketConsumerKey);
-        data.put("access_token", getCreds().accessCode());
-        data.put("state", "unread");
-        data.put("detailType", "complete");
-
-        String payload = mapper.writeValueAsString(data);
-        HttpRequest request = HttpRequest.newBuilder().POST(HttpRequest.BodyPublishers.ofString(payload)).uri(URI.create(pocketGetUrl)).header("Content-Type", "application/json").header("X-accept", "application/json").build();
-
-        HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
-
-        // print status code
-        log.debug("status: {}", response.statusCode());
-
-        // print response body
-        log.debug("response: {}", response.body());
-
-        if (response.statusCode() == 200) {
-            var pocketResponse = getPocketGetResponse(response);
-
-            ToReadPredicate predicate = new ToReadPredicate();
-            var items = pocketResponse.items();
-            int counter = 0;
-            for (Map.Entry<String, ListItem> entry : items.entrySet()) {
-                ListItem item = entry.getValue();
-                counter += predicate.test(item, null) ? 1 : 0;
-            }
-
-            return counter;
+        if (status == null) {
+            log.warn("No import was done. Importing all items");
+            return importAll();
         } else {
-            throw new IllegalArgumentException("Not acquired access token.");
+            return importAllToDbSince(status.date());
         }
     }
 
@@ -144,32 +110,6 @@ public class PocketApiService {
         return gotItems;
     }
 
-    public Map<PocketStatPredicate, Integer> getCurrentMonth() throws IOException, InterruptedException {
-        ZoneId zoneId = getZoneId();
-        Instant sinceWhen = TimeUtils.getStartOfCurrentMonth().atZone(zoneId).toInstant();
-        return calcStatsSinceWhen(sinceWhen);
-    }
-
-    public Map<PocketStatPredicate, Integer> calcStatsSinceWhen(Instant sinceWhen) throws IOException, InterruptedException {
-        var pocketResponse = sinceWhen(sinceWhen);
-
-        Map<PocketStatPredicate, Integer> stats = new HashMap<>();
-        statPredicates.forEach(predicate -> {
-            stats.put(predicate, 0);
-        });
-
-        var items = pocketResponse.items();
-        items.forEach((itemId, item) -> {
-            try {
-                statPredicates.forEach(predicate -> stats.compute(predicate, (k, oldValue) -> predicate.test(item, sinceWhen) ? oldValue + 1 : oldValue));
-            } catch (Exception e) {
-                log.error("exception catched:", e);
-            }
-        });
-
-        return stats;
-    }
-
     public PocketGetResponse sinceWhen(Instant sinceWhen) throws IOException, InterruptedException {
         log.info("Reading items since {}", sinceWhen);
 
@@ -223,7 +163,7 @@ public class PocketApiService {
         log.info("Handling 401 error");
         ApiXHeaders apiXHeaders = ApiXHeaders.of(response);
 
-        throw new IllegalStateException("Generate new token!. Authorization failed with status: '%s'. Api pocket " + "responded " + "with " + "401, " + "error code: %d, " + "error description: %s".formatted(apiXHeaders.status(), apiXHeaders.errorCode(), apiXHeaders.error()));
+        throw new IllegalStateException("Generate new token!. Authorization failed with status: '%%s'. Api pocket responded with 401, error code: %%d, %s".formatted("error description: %s".formatted(apiXHeaders.status(), apiXHeaders.errorCode(), apiXHeaders.error())));
     }
 
     private void logResponse(HttpResponse<String> response) {

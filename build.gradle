@@ -39,6 +39,7 @@ dependencies {
     annotationProcessor "org.mapstruct:mapstruct-processor:${mapstructVersion}",
             "org.projectlombok:lombok:${lombokVersion}",
             "org.projectlombok:lombok-mapstruct-binding:${lombokMapstructBindingVersion}"
+    implementation 'com.google.guava:guava:31.1-jre'
 
     //	Tests
     testImplementation('org.springframework.boot:spring-boot-starter-test') {

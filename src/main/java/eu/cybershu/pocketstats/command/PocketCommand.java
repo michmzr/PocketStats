@@ -1,43 +1,53 @@
 package eu.cybershu.pocketstats.command;
 
 import eu.cybershu.pocketstats.pocket.PocketApiService;
+import eu.cybershu.pocketstats.pocket.PocketStats;
+import eu.cybershu.pocketstats.pocket.api.PocketItemStatsService;
 import eu.cybershu.pocketstats.shell.ShellHelper;
-import eu.cybershu.pocketstats.stats.PocketStatPredicate;
-import org.springframework.beans.factory.annotation.Autowired;
+import eu.cybershu.pocketstats.utils.TimeUtils;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.shell.standard.ShellComponent;
 import org.springframework.shell.standard.ShellMethod;
 import org.springframework.shell.standard.ShellMethodAvailability;
+import org.springframework.shell.standard.ShellOption;
 
 import java.io.IOException;
-import java.util.Map;
 
+@Slf4j
 @ShellComponent
 public class PocketCommand extends SecuredCommand {
 
     @Lazy
-    @Autowired
-    private ShellHelper shellHelper;
+    private final ShellHelper shellHelper;
 
-    @Autowired
-    private PocketApiService pocketApiService;
+    private final PocketApiService pocketApiService;
 
-    @ShellMethod("Get current month records")
-    @ShellMethodAvailability("isUserAuthorized")
-    public void currentMonth() throws IOException, InterruptedException {
-        Map<PocketStatPredicate, Integer> stats = pocketApiService.getCurrentMonth();
+    private final PocketItemStatsService statsService;
 
-        printStats(stats);
+    public PocketCommand(ShellHelper shellHelper, PocketApiService pocketApiService, PocketItemStatsService statsService) {
+        this.shellHelper = shellHelper;
+        this.pocketApiService = pocketApiService;
+        this.statsService = statsService;
     }
 
-    @ShellMethod("Items left to read")
+    @ShellMethod("Print today stats")
     @ShellMethodAvailability("isUserAuthorized")
-    public void toRead() throws IOException, InterruptedException {
-        int counter = pocketApiService.itemsToRead();
-        shellHelper.print("Items to read:" + counter);
-    }
+    public void statsToday(@ShellOption(value = {"--update", "-u"},
+            help = "if true then app gets new items from GetPocket") Boolean updateDb) throws IOException, InterruptedException {
+        log.info("Today stats - update: {}", updateDb);
 
-    private void printStats(Map<PocketStatPredicate, Integer> stats) {
-        stats.forEach((pred, counter)-> shellHelper.print(pred.getName() + ":" + counter));
+        if (updateDb) {
+            shellHelper.printInfo("Getting items from GetPocket");
+            pocketApiService.importFromSinceLastUpdate();
+        }
+
+        PocketStats stats = statsService.getStats(
+                TimeUtils.instantTodayBegin(),
+                TimeUtils.instantTodayEnd()
+        );
+
+        shellHelper.print("added:" + stats.added());
+        shellHelper.print("read:" + stats.read());
     }
 }
