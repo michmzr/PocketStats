@@ -1,6 +1,6 @@
 package eu.cybershu.pocketstats.stats;
 
-import eu.cybershu.pocketstats.model.api.ListItem;
+import eu.cybershu.pocketstats.pocket.api.ListItem;
 import org.springframework.stereotype.Component;
 
 import java.time.Instant;
@@ -14,10 +14,9 @@ public class NewAddedPredicate implements PocketStatPredicate{
 
     @Override
     public Boolean test(ListItem item, Instant sinceWhen) {
-        if(item.getTimeAdded() == null)
-            return false;
+        if (item.timeAdded() == null) return false;
 
-        return item.getTimeAdded().isAfter(sinceWhen);
+        return item.timeAdded().isAfter(sinceWhen);
     }
 
     @Override

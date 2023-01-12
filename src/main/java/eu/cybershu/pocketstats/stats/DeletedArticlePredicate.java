@@ -1,7 +1,7 @@
 package eu.cybershu.pocketstats.stats;
 
-import eu.cybershu.pocketstats.model.api.ItemStatus;
-import eu.cybershu.pocketstats.model.api.ListItem;
+import eu.cybershu.pocketstats.pocket.api.ItemStatus;
+import eu.cybershu.pocketstats.pocket.api.ListItem;
 import org.springframework.stereotype.Component;
 
 import java.time.Instant;
@@ -15,7 +15,7 @@ public class DeletedArticlePredicate implements PocketStatPredicate{
 
     @Override
     public Boolean test(ListItem item, Instant sinceWhen) {
-        return item.getStatus() == ItemStatus.DELETED;
+        return item.status() == ItemStatus.DELETED;
     }
 
     @Override

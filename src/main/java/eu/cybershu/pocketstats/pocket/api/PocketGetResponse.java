@@ -1,9 +1,13 @@
 
-package eu.cybershu.pocketstats.model.api;
+package eu.cybershu.pocketstats.pocket.api;
 
 import com.fasterxml.jackson.annotation.*;
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
+import eu.cybershu.pocketstats.pocket.PocketResponseItemsDeserializer;
+import eu.cybershu.pocketstats.utils.LongToInstantConverter;
 import lombok.Data;
 
+import java.time.Instant;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -19,14 +23,17 @@ public class PocketGetResponse {
     private Integer status;
     @JsonProperty("complete")
     private Integer complete;
+
     @JsonProperty("list")
+    @JsonDeserialize(using = PocketResponseItemsDeserializer.class)
     private Map<String, ListItem> items;
     @JsonProperty("error")
     private Object error;
     @JsonProperty("search_meta")
     private SearchMeta searchMeta;
     @JsonProperty("since")
-    private Integer since;
+    @JsonDeserialize(converter = LongToInstantConverter.class)
+    private Instant since;
     @JsonIgnore
     private Map<String, Object> additionalProperties = new HashMap<>();
 
@@ -38,5 +45,10 @@ public class PocketGetResponse {
     @JsonAnySetter
     public void setAdditionalProperty(String name, Object value) {
         this.additionalProperties.put(name, value);
+    }
+
+    @Override
+    public String toString() {
+        return "PocketGetResponse{" + "status=" + status + ", complete=" + complete + ", items=" + (items != null ? items.size() : "empty") + ", " + "error" + "=" + error + ", since=" + since + '}';
     }
 }

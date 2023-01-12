@@ -1,5 +1,5 @@
 
-package eu.cybershu.pocketstats.model.api;
+package eu.cybershu.pocketstats.pocket.api;
 
 import com.fasterxml.jackson.annotation.*;
 import lombok.Data;

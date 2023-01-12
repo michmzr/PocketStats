@@ -1,11 +1,10 @@
 package eu.cybershu.pocketstats.controller;
 
-import eu.cybershu.pocketstats.PocketApiService;
+import eu.cybershu.pocketstats.pocket.PocketAuthorizationService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 @Slf4j
@@ -13,13 +12,13 @@ import org.springframework.web.bind.annotation.RestController;
 @RequestMapping("/pocket/auth/")
 public class PocketApiController {
     @Autowired
-    private PocketApiService pocketApiService;
+    private PocketAuthorizationService authorizationService;
 
     @GetMapping("token")
-    public String onRedirect(@RequestParam("sessionId") String sessionId) {
-        log.info("Redirection for session {} successfull", sessionId);
+    public String onRedirect() {
+        log.info("Redirection successfull");
 
-        pocketApiService.deregisterAuthSession(sessionId);
+        authorizationService.deregisterAuthSession();
 
         return "authorized app. You can go back to console.";
     }

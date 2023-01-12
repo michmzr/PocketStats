@@ -1,5 +1,5 @@
 
-package eu.cybershu.pocketstats.model.api;
+package eu.cybershu.pocketstats.pocket.api;
 
 import com.fasterxml.jackson.annotation.*;
 import lombok.Data;
@@ -8,14 +8,12 @@ import java.util.HashMap;
 import java.util.Map;
 
 @Data
-@JsonIgnoreProperties(ignoreUnknown = true)
 @JsonInclude(JsonInclude.Include.NON_NULL)
-public class Tag {
+@JsonIgnoreProperties(ignoreUnknown = true)
+public class SearchMeta {
 
-    @JsonProperty("item_id")
-    private String itemId;
-    @JsonProperty("tag")
-    private String tag;
+    @JsonProperty("search_type")
+    private String searchType;
     @JsonIgnore
     private Map<String, Object> additionalProperties = new HashMap<>();
 
@@ -28,4 +26,5 @@ public class Tag {
     public void setAdditionalProperty(String name, Object value) {
         this.additionalProperties.put(name, value);
     }
+
 }

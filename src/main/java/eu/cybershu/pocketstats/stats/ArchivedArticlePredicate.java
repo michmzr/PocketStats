@@ -1,6 +1,6 @@
 package eu.cybershu.pocketstats.stats;
 
-import eu.cybershu.pocketstats.model.api.ListItem;
+import eu.cybershu.pocketstats.pocket.api.ListItem;
 import org.springframework.stereotype.Component;
 
 import java.time.Instant;
@@ -14,7 +14,7 @@ public class ArchivedArticlePredicate implements PocketStatPredicate{
 
     @Override
     public Boolean test(ListItem item, Instant sinceWhen) {
-        return item.getTimeRead() != null && item.getTimeRead().isAfter(sinceWhen);
+        return item.timeRead() != null && item.timeRead().isAfter(sinceWhen);
     }
 
     @Override

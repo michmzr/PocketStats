@@ -1,29 +1,27 @@
 package eu.cybershu.pocketstats.db;
 
-import eu.cybershu.pocketstats.model.api.ItemStatus;
+import eu.cybershu.pocketstats.pocket.api.DomainMetadata;
+import eu.cybershu.pocketstats.pocket.api.ItemStatus;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import org.springframework.data.annotation.Id;
+import org.springframework.lang.NonNull;
 
 import java.time.Instant;
+import java.util.List;
 
 @Data
-@EqualsAndHashCode(of = {"id", "url", "title", "status", "timeAdded"})
+@EqualsAndHashCode(of = {"id", "url", "title", "status", "timeAdded", "timeRead"})
 public class PocketItem {
     @Id
     private String id;
-
     private String url;
     private String title;
-
     private Boolean favorite;
-
+    @NonNull
     private ItemStatus status;
-
     private Instant timeAdded;
-
     private Instant timeUpdated;
-
     private Instant timeRead;
     private Instant timeFavorited;
     private String resolvedTitle;
@@ -31,6 +29,6 @@ public class PocketItem {
     private String excerpt;
     private Integer wordCount;
     private String lang;
-//    private DomainMetadata domainMetadata;
-//    private Map<String, Tag> tags;
+    private DomainMetadata domainMetadata;
+    private List<String> tags;
 }
