@@ -1,6 +1,5 @@
 package eu.cybershu.pocketstats.command;
 
-import eu.cybershu.pocketstats.db.MigrationStatusRepository;
 import eu.cybershu.pocketstats.db.PocketItemRepository;
 import eu.cybershu.pocketstats.pocket.PocketApiService;
 import eu.cybershu.pocketstats.shell.ShellHelper;
@@ -29,21 +28,12 @@ public class ImportPocketCommand extends SecuredCommand {
     private final PocketApiService pocketApiService;
 
     private final PocketItemRepository repository;
-    private final MigrationStatusRepository migrationStatusRepository;
 
-    public ImportPocketCommand(ShellHelper shellHelper, PocketApiService pocketApiService, PocketItemRepository repository, MigrationStatusRepository migrationStatusRepository) {
+    public ImportPocketCommand(ShellHelper shellHelper, PocketApiService pocketApiService,
+                               PocketItemRepository repository) {
         this.shellHelper = shellHelper;
         this.pocketApiService = pocketApiService;
         this.repository = repository;
-        this.migrationStatusRepository = migrationStatusRepository;
-    }
-
-    @ShellMethod("Import last years to DB")
-    @ShellMethodAvailability("isUserAuthorized")
-    public void importLastYears(@ShellOption("-y") Integer years) throws IOException, InterruptedException {
-        var sinceWhen = LocalDateTime.now().minusYears(years).withHour(0).withMinute(0).withSecond(1).atZone(ZoneId.systemDefault()).toInstant();
-
-        shellHelper.print("Imported: " + pocketApiService.importAllToDbSince(sinceWhen));
     }
 
     @ShellMethod("Import items since last migration")
