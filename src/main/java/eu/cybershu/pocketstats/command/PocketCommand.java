@@ -47,6 +47,7 @@ public class PocketCommand extends SecuredCommand {
                 TimeUtils.instantTodayEnd()
         );
 
+        shellHelper.print("Today's stats ->");
         shellHelper.print("added:" + stats.added());
         shellHelper.print("read:" + stats.read());
     }

@@ -67,5 +67,4 @@ public class ImportPocketCommand extends SecuredCommand {
 
         shellHelper.printInfo("Collection of pocket items got cleaned.");
     }
-
 }

@@ -33,7 +33,6 @@ public class PocketApiAuthCommand {
         while (authorizationService.isAuthSessionActive()) {
             Thread.sleep(80);
         }
-        ;
 
         shellHelper.printInfo("App authorized to your API.");
 
