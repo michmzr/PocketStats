@@ -156,3 +156,6 @@ gradle-app.setting
 #ENV
 env_dev.json
 /pocket-creds.json
+
+# Frontend
+./frontend/node_modules
