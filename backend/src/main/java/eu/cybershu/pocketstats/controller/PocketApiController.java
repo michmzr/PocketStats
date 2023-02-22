@@ -24,4 +24,9 @@ public class PocketApiController {
 
         return "authorized app. You can go back to console.";
     }
+
+//    @GetMapping("/auth/authorized")
+//    public Boolean authorized() {
+//        return authorizationService.
+//    }
 }

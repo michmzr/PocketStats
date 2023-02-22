@@ -1,18 +1,14 @@
 buildscript {
     ext {
-        springBootVersion = '3.0.1'
     }
     repositories {
         mavenCentral()
     }
     dependencies {
-        classpath("org.springframework.boot:spring-boot-gradle-plugin:${springBootVersion}")
     }
 }
 
 allprojects {
-    apply plugin: 'io.spring.dependency-management'
-
     group = 'eu.cybershu'
     version = '0.1'
 }

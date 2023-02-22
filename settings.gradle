@@ -1,1 +1,4 @@
 rootProject.name = 'pocketstats'
+include 'backend'
+include 'frontend'
+
