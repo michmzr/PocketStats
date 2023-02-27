@@ -25,8 +25,14 @@ management:
     web:
       exposure:
         include: [ 'configprops', 'mappings', 'health', 'info', 'logfile', 'loggers', 'endpoints' ]
+server:
+  error:
+    include-binding-errors: always
 
 spring:
+  jackson:
+    serialization:
+      WRITE_DATES_AS_TIMESTAMPS: false
   datasource.driver-class-name: com.mysql.jdbc.Driver
   data:
     mongodb:

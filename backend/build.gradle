@@ -28,8 +28,12 @@ dependencies {
     implementation 'commons-validator:commons-validator:1.7'
     developmentOnly 'org.springframework.boot:spring-boot-devtools'
     implementation 'com.fasterxml.jackson.core:jackson-databind'
+    implementation group: 'com.fasterxml.jackson.dataformat', name: 'jackson-dataformat-xml', version: '2.14.2'
+    implementation group: 'com.fasterxml.jackson.core', name: 'jackson-databind', version: '2.14.2'
     implementation 'org.springframework.shell:spring-shell-starter'
     implementation 'org.springframework.boot:spring-boot-starter-data-mongodb'
+    implementation group: 'javax.validation', name: 'validation-api', version: '2.0.1.Final'
+    implementation 'com.google.code.findbugs:jsr305:3.0.2'
 
     implementation "org.mapstruct:mapstruct:${mapstructVersion}",
             "org.projectlombok:lombok:${lombokVersion}"

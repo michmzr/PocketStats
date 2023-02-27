@@ -1,18 +1,17 @@
 <template>
   <div class="home">
-    <img alt="Vue logo" src="../assets/logo.png">
-    <HelloWorld msg="Welcome to Your Vue.js App"/>
+    <TopAuth/>
   </div>
 </template>
 
-<script>
-// @ is an alias to /src
-import HelloWorld from '@/components/HelloWorld.vue'
+<script lang="ts">
+import {Options, Vue} from 'vue-class-component';
+import TopAuth from '@/components/TopAuth.vue';
 
-export default {
-  name: 'HomeView',
+@Options({
   components: {
-    HelloWorld
-  }
-}
+    TopAuth
+  },
+})
+export default class HomeView extends Vue {}
 </script>

@@ -45,7 +45,9 @@ public class PocketAuthorizationService {
     private Boolean isUserAuthorisating;
 
     public PocketAuthorizationService() {
-        this.client = HttpClient.newBuilder().followRedirects(HttpClient.Redirect.NORMAL).connectTimeout(Duration.ofSeconds(20)).build();
+        this.client = HttpClient.newBuilder()
+                .followRedirects(HttpClient.Redirect.NORMAL)
+                .connectTimeout(Duration.ofSeconds(20)).build();
         this.mapper = new ObjectMapper();
         this.isUserAuthorisating = false;
     }
@@ -60,7 +62,12 @@ public class PocketAuthorizationService {
         data.put("redirect_uri", getPocketRedirectUrl());
 
         String payload = mapper.writeValueAsString(data);
-        HttpRequest request = HttpRequest.newBuilder().POST(HttpRequest.BodyPublishers.ofString(payload)).uri(URI.create(pocketRequestUrl)).header("Content-Type", "application/json; charset=UTF8").header("X-accept", "application/json").build();
+        HttpRequest request = HttpRequest
+                .newBuilder()
+                .POST(HttpRequest.BodyPublishers.ofString(payload))
+                .uri(URI.create(pocketRequestUrl))
+                .header("Content-Type", "application/json; charset=UTF8")
+                .header("X-accept", "application/json").build();
 
         HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
 
@@ -96,7 +103,11 @@ public class PocketAuthorizationService {
         data.put("code", code);
 
         String payload = mapper.writeValueAsString(data);
-        HttpRequest request = HttpRequest.newBuilder().POST(HttpRequest.BodyPublishers.ofString(payload)).uri(URI.create(pocketAccessTokenRetrieveUrl)).header("Content-Type", "application/json; charset=UTF8").header("X-accept", "application/json").build();
+        HttpRequest request = HttpRequest.newBuilder()
+                .POST(HttpRequest.BodyPublishers.ofString(payload))
+                .uri(URI.create(pocketAccessTokenRetrieveUrl))
+                .header("Content-Type", "application/json; charset=UTF8")
+                .header("X-accept", "application/json").build();
 
         HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
 
@@ -115,7 +126,8 @@ public class PocketAuthorizationService {
     }
 
     public String generateLoginUrl(String code) {
-        return String.format(this.pocketAuthorizeUrl + "?request_token=%s&redirect_uri=%s", code, getPocketRedirectUrl());
+        return String.format(this.pocketAuthorizeUrl + "?request_token=%s&redirect_uri=%s",
+                code, getPocketRedirectUrl());
     }
 
     private String getPocketRedirectUrl() {
