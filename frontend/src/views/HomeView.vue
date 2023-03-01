@@ -1,16 +1,16 @@
 <template>
   <div class="home">
-    <TopAuth/>
+    <HomeAuth/>
   </div>
 </template>
 
 <script lang="ts">
 import {Options, Vue} from 'vue-class-component';
-import TopAuth from '@/components/TopAuth.vue';
+import HomeAuth from "@/components/HomeAuth.vue";
 
 @Options({
   components: {
-    TopAuth
+    HomeAuth
   },
 })
 export default class HomeView extends Vue {}

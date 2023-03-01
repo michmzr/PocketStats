@@ -1,18 +1,25 @@
 import axios from 'axios'
 import {useSessionStore} from "@/store";
+import {ConfigsService} from "@/services/configs-service";
 
 export class AuthorizationService {
-    sessionStore = useSessionStore();
 
-    getAuthorizationStatus() {
+    sessionStore = useSessionStore();
+    configsService = new ConfigsService();
+
+    getAuthorizationStatusFromBackend() {
         return axios
-            .get('http://localhost:8080/pocket/auth/authorized');
+            .get(`${this.configsService.backendUrl()}/pocket/auth/authorized`);
     }
 
     updateAuthorizationState() {
-        this.getAuthorizationStatus().then((response) => {
-            console.log(response.data.data.status);
+        this.getAuthorizationStatusFromBackend().then((response) => {
             this.sessionStore.setAuthorizedState(response.data.data.status)
         })
+    }
+
+    getLoginUrl() {
+        return axios
+            .get(`${this.configsService.backendUrl()}/pocket/auth/login_url`);
     }
 }

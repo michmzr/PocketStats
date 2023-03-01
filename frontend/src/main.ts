@@ -5,9 +5,10 @@ import axios from 'axios'
 import router from "@/router";
 import {createPinia} from "pinia";
 
+const app = createApp(App);
 const pinia = createPinia()
 
-createApp(App)
+app
     .use(pinia)
     .use(VueAxios, axios)
     .use(router)
