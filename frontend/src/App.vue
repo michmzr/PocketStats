@@ -1,6 +1,7 @@
 <template>
   <nav>
     <router-link to="/">Home</router-link> |
+    <TopAuth/>
   </nav>
   <router-view/>
 </template>
@@ -27,3 +28,10 @@ nav a.router-link-exact-active {
   color: #42b983;
 }
 </style>
+<script>
+import {defineComponent} from "vue";
+
+export default defineComponent({
+  components: {},
+});
+</script>

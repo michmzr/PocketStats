@@ -6,11 +6,11 @@
 
 <script lang="ts">
 import {Options, Vue} from 'vue-class-component';
-import HomeAuth from "@/components/HomeAuth.vue";
+import TopAuth from "@/components/TopAuth.vue";
 
 @Options({
   components: {
-    HomeAuth
+    HomeAuth: TopAuth
   },
 })
 export default class HomeView extends Vue {}

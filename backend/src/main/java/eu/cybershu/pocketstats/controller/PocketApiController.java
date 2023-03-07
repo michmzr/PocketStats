@@ -5,6 +5,7 @@ import eu.cybershu.pocketstats.pocket.PocketAuthorizationService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -20,13 +21,13 @@ public class PocketApiController {
         this.authorizationService = authorizationService;
     }
 
-    @GetMapping("token")
-    public String onRedirect() {
-        log.info("Redirection successful.");
+    @GetMapping("token/{id}")
+    public String onRedirect(@PathVariable("id") String id) throws IOException, InterruptedException {
+        log.info("Redirection successful - session id = {}", id);
 
-        authorizationService.deregisterAuthSession();
+        authorizationService.completeAuthProcess();
 
-        return "authorized app. You can go back to console.";
+        return "App is authorized. You can now start using beauty of data.";
     }
 
     @GetMapping(value = "/authorized",
@@ -35,21 +36,21 @@ public class PocketApiController {
         AuthorizationStatus status = new AuthorizationStatus(
                 authorizationService.getCredentials().isPresent());
 
-        return new ApiResponse<AuthorizationStatus>(0, "ok", status);
+        return new ApiResponse<>(0, "ok", status);
     }
 
-    @GetMapping(value = "/login_url",
+    @GetMapping(value = "/login",
             produces = MediaType.APPLICATION_JSON_VALUE)
-    public ApiResponse<AuthorizationLink> authorizationLink() throws IOException, InterruptedException {
-        final String code = authorizationService.obtainAuthCode();
+    public ApiResponse<AuthorizationLink> loginToPocket() throws IOException, InterruptedException {
+        final String sessionId = authorizationService.generateSessionId();
+        final String code = authorizationService.obtainAuthCode(sessionId);
 
-        authorizationService.registerAuthSession();
-
-        var response = new ApiResponse<>(0, "ok",
-                new AuthorizationLink(authorizationService.generateLoginUrl(code), code)
+        final AuthorizationLink authorizationLink = new AuthorizationLink(authorizationService.generateLoginUrl(code,
+                sessionId), code);
+        authorizationService.startAuthProcess(
+                sessionId, code, authorizationLink.link()
         );
 
-        return response;
-
+        return new ApiResponse<>(0, "ok", authorizationLink);
     }
 }

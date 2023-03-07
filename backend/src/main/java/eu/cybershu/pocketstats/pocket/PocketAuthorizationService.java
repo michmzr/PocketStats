@@ -19,6 +19,7 @@ import java.time.Duration;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Random;
 
 @Slf4j
 @Service
@@ -42,24 +43,27 @@ public class PocketAuthorizationService {
     @Value("${auth.pocket.url.access_token}")
     private String pocketAccessTokenRetrieveUrl;
 
-    private Boolean isUserAuthorisating;
+    private UserCurrentlyAuthorising userCurrentlyAuthorising;
 
     public PocketAuthorizationService() {
         this.client = HttpClient.newBuilder()
                 .followRedirects(HttpClient.Redirect.NORMAL)
                 .connectTimeout(Duration.ofSeconds(20)).build();
         this.mapper = new ObjectMapper();
-        this.isUserAuthorisating = false;
+    }
+
+    public String generateSessionId() {
+        return String.valueOf(new Random().nextInt());
     }
 
     /**
      * @return authorisation code
      * @link <a href="https://getpocket.com/developer/docs/authentication">pocket api auth</a>
      */
-    public String obtainAuthCode() throws IOException, InterruptedException {
+    public String obtainAuthCode(String sessionId) throws IOException, InterruptedException {
         Map<Object, Object> data = new HashMap<>();
         data.put("consumer_key", pocketConsumerKey);
-        data.put("redirect_uri", getPocketRedirectUrl());
+        data.put("redirect_uri", getPocketRedirectUrl(sessionId));
 
         String payload = mapper.writeValueAsString(data);
         HttpRequest request = HttpRequest
@@ -85,16 +89,40 @@ public class PocketAuthorizationService {
         }
     }
 
-    public void registerAuthSession() {
-        isUserAuthorisating = true;
-    }
-
-    public void deregisterAuthSession() {
-        isUserAuthorisating = false;
-    }
 
     public boolean isAuthSessionActive() {
-        return isUserAuthorisating;
+        return this.userCurrentlyAuthorising != null;
+    }
+
+    public void startAuthProcess(String sessionId, String code, String loginLink) {
+        log.info("Starting auth process - sessionId: {}", sessionId);
+
+        if (this.userCurrentlyAuthorising != null)
+            clearAuthProcess();
+
+        this.userCurrentlyAuthorising = UserCurrentlyAuthorising.of(
+                sessionId, code, loginLink
+        );
+    }
+
+    public void completeAuthProcess() throws IOException, InterruptedException {
+        log.info("Completing auth process - {}...", this.userCurrentlyAuthorising);
+
+        if (this.userCurrentlyAuthorising == null) {
+            throw new IllegalStateException("Another auth process is active. Complete one or reboot application");
+        }
+
+        log.info("Acquiring access token");
+        final String accessToken = authorize(this.userCurrentlyAuthorising.code());
+
+        log.info("Acquired access token. Saving access token and code to file");
+        save(new PocketUserCredentials(this.userCurrentlyAuthorising.code(), accessToken));
+
+        clearAuthProcess();
+    }
+
+    public void clearAuthProcess() {
+        this.userCurrentlyAuthorising = null;
     }
 
     public String authorize(String code) throws IOException, InterruptedException {
@@ -125,13 +153,13 @@ public class PocketAuthorizationService {
         }
     }
 
-    public String generateLoginUrl(String code) {
+    public String generateLoginUrl(String code, String sessionId) {
         return String.format(this.pocketAuthorizeUrl + "?request_token=%s&redirect_uri=%s",
-                code, getPocketRedirectUrl());
+                code, getPocketRedirectUrl(sessionId));
     }
 
-    private String getPocketRedirectUrl() {
-        return pocketRedirectUrl;
+    private String getPocketRedirectUrl(String id) {
+        return pocketRedirectUrl + "/" + id;
     }
 
     public void save(PocketUserCredentials pocketUserCredentials) {
