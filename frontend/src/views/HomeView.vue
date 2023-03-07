@@ -1,7 +1,5 @@
 <template>
-  <div class="home">
-    <HomeAuth/>
-  </div>
+  <h1>Hello World</h1>
 </template>
 
 <script lang="ts">

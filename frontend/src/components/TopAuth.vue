@@ -1,15 +1,21 @@
 <template>
-  <div>
+  <form class="form-inline my-2 my-lg-0">
     <div v-if="!authorized && waitingForLogin === false">
       <a v-if="loginUrl" v-bind:href="loginUrl" target="_blank" v-on:click="loginStarted">
-        Log to pocket
+        <button class="btn btn-outline-primary my-2 my-sm-0" type="submit">Log to pocket</button>
       </a>
     </div>
 
-    <div v-if="waitingForLogin">waiting for you... complete login to GetPocket.</div>
+    <button class="btn btn-light btn-outline-primary" v-if="waitingForLogin" disabled>
+      <font-awesome-icon icon="spinner" spin/>
+      Waiting...
+    </button>
 
-    <div v-if="authorized">logged</div>
-  </div>
+    <label v-if="authorized">
+      <font-awesome-icon icon="user"/>
+    </label>
+  </form>
+
 </template>
 
 <script lang="ts">
@@ -62,24 +68,3 @@ export default class TopAuth extends Vue {
   }
 }
 </script>
-
-<!-- Add "scoped" attribute to limit CSS to this component only -->
-<style scoped>
-h3 {
-  margin: 40px 0 0;
-}
-
-ul {
-  list-style-type: none;
-  padding: 0;
-}
-
-li {
-  display: inline-block;
-  margin: 0 10px;
-}
-
-a {
-  color: #42b983;
-}
-</style>
