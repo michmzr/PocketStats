@@ -44,7 +44,7 @@ public class PocketApiService {
     }
 
     public Integer importFromSinceLastUpdate() throws IOException, InterruptedException {
-        MigrationStatus status = migrationStatusRepository.findTopByOrderByDateDesc();
+        MigrationStatus status = lastMigration();
 
         log.debug("import from last - status={}", status);
 
@@ -54,6 +54,10 @@ public class PocketApiService {
         } else {
             return importAllToDbSince(status.date());
         }
+    }
+
+    public MigrationStatus lastMigration() {
+        return migrationStatusRepository.findTopByOrderByDateDesc();
     }
 
     public Integer importAllToDbSince(Instant sinceWhen) throws IOException, InterruptedException {

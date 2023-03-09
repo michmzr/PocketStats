@@ -16,6 +16,8 @@
 
   </div>
   <main role="main" class="container">
+    <TopTools></TopTools>
+
     <router-view/>
   </main>
 </template>
@@ -23,9 +25,11 @@
 <script>
 import {defineComponent} from "vue";
 import TopAuth from "@/components/TopAuth";
+import TopTools from "@/components/SyncPanel";
 
 export default defineComponent({
   components: {
+    TopTools,
     TopAuth
 
   },

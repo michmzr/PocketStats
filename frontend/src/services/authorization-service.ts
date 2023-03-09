@@ -14,7 +14,7 @@ export class AuthorizationService {
 
     updateAuthorizationState() {
         this.getAuthorizationStatusFromBackend().then((response) => {
-            this.sessionStore.setAuthorizedState(response.data.data.status)
+            this.sessionStore.setSyncStatus(response.data.data.status)
         })
     }
 

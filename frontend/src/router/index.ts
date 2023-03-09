@@ -1,6 +1,7 @@
 import {createRouter, createWebHashHistory} from 'vue-router'
 import HomeView from '../views/HomeView.vue'
 import {AuthorizationService} from "@/services/authorization-service";
+import {SyncService} from "@/services/sync-service";
 
 const routes = [
   {
@@ -17,6 +18,7 @@ const router = createRouter({
 
 router.beforeResolve((to, from, next) => {
   new AuthorizationService().updateAuthorizationState();
+  new SyncService().updateLastSyncStatus();
   next()
 })
 

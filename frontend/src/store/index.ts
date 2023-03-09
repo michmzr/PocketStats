@@ -1,4 +1,5 @@
 import {defineStore} from "pinia";
+import {SyncStatusInterface} from "@/models/sync-models";
 
 export const useSessionStore = defineStore("session", {
   state: () => {
@@ -7,13 +8,36 @@ export const useSessionStore = defineStore("session", {
     };
   },
   actions: {
-       setAuthorizedState(authorized: boolean) {
-         this.authorized = authorized
-       }
+    setSyncStatus(authorized: boolean) {
+      this.authorized = authorized
+    }
   },
   getters: {
-    isAuthorized():boolean  {
+    isAuthorized(): boolean {
       return this.authorized;
     }
   },
 });
+
+export const useSyncStore = defineStore("sync", {
+  state: () => {
+    return {
+      lastState: ({
+        date: undefined,
+        records: 0
+      } as SyncStatusInterface)
+    }
+  },
+
+  actions: {
+    setSyncStatus(state: SyncStatusInterface) {
+      this.lastState = state;
+    }
+  },
+  getters: {
+    getSyncStatus(): SyncStatusInterface {
+      return this.lastState
+    }
+  },
+});
+

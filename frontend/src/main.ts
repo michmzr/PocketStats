@@ -4,7 +4,7 @@ import VueAxios from 'vue-axios'
 import axios from 'axios'
 import router from "@/router";
 import {createPinia} from "pinia";
-import {BootstrapVue3} from "bootstrap-vue-3";
+import {BootstrapVue3, BToastPlugin} from "bootstrap-vue-3";
 
 // Import Bootstrap and BootstrapVue CSS files (order is important)
 import 'bootstrap/dist/css/bootstrap.css'
@@ -24,5 +24,6 @@ app
     .use(VueAxios, axios)
     .use(router)
     .use(BootstrapVue3)
+    .use(BToastPlugin)
     .component("font-awesome-icon", FontAwesomeIcon)
     .mount('#app')
