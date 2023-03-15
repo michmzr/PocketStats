@@ -1,4 +1,4 @@
-package eu.cybershu.pocketstats.controller;
+package eu.cybershu.pocketstats.auth;
 
 import eu.cybershu.pocketstats.api.ApiResponse;
 import eu.cybershu.pocketstats.pocket.PocketAuthorizationService;

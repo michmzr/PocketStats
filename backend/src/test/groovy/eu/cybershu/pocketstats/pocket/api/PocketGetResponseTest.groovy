@@ -88,7 +88,6 @@ class PocketGetResponseTest extends BaseTest {
             verifyAll {
                 item.id() == "37783"
 
-                //todo more
                 item.timeAdded()
                 item.timeRead()
 

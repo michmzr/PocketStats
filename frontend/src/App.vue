@@ -17,6 +17,7 @@
   </div>
   <main role="main" class="container">
     <TopTools></TopTools>
+    <ArchivedStatsChart></ArchivedStatsChart>
 
     <router-view/>
   </main>
@@ -26,12 +27,13 @@
 import {defineComponent} from "vue";
 import TopAuth from "@/components/TopAuth";
 import TopTools from "@/components/SyncPanel";
+import ArchivedStatsChart from "@/components/ArchivedStatsChart";
 
 export default defineComponent({
   components: {
+    ArchivedStatsChart,
     TopTools,
     TopAuth
-
   },
 });
 </script>

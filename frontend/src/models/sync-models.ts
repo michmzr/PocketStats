@@ -1,9 +1,9 @@
-export interface SyncStatusInterface {
+export interface ISyncStatus {
     date: Date | undefined
     records: number
 }
 
-export class SyncStatus implements SyncStatusInterface {
+export class SyncStatus implements ISyncStatus {
     date: Date | undefined;
     records: number = 0;
 

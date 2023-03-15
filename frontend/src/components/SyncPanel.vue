@@ -44,7 +44,6 @@ export default class SyncPanel extends Vue {
   mounted() {
     this.loadedData = false;
 
-    this.authorized = false;
     this.isAuthorized();
 
     this.lastSync = this.syncStore.getSyncStatus;
@@ -55,7 +54,6 @@ export default class SyncPanel extends Vue {
     });
 
     this.syncStore.$subscribe((mutation, state) => {
-      console.log("updaded sync state");
       this.syncing = false;
       this.lastSync = state.lastState
       this.lastSyncMsg = this.genSyncMsg();

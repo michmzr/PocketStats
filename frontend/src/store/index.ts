@@ -1,5 +1,5 @@
 import {defineStore} from "pinia";
-import {SyncStatusInterface} from "@/models/sync-models";
+import {ISyncStatus} from "@/models/sync-models";
 
 export const useSessionStore = defineStore("session", {
   state: () => {
@@ -25,17 +25,17 @@ export const useSyncStore = defineStore("sync", {
       lastState: ({
         date: undefined,
         records: 0
-      } as SyncStatusInterface)
+      } as ISyncStatus)
     }
   },
 
   actions: {
-    setSyncStatus(state: SyncStatusInterface) {
+    setSyncStatus(state: ISyncStatus) {
       this.lastState = state;
     }
   },
   getters: {
-    getSyncStatus(): SyncStatusInterface {
+    getSyncStatus(): ISyncStatus {
       return this.lastState
     }
   },

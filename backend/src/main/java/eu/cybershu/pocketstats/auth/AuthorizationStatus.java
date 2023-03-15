@@ -1,4 +1,4 @@
-package eu.cybershu.pocketstats.controller;
+package eu.cybershu.pocketstats.auth;
 
 import java.io.Serializable;
 
