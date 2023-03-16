@@ -34,10 +34,16 @@ public class PocketApiService {
     @Value("${auth.pocket.url.get}")
     private String pocketGetUrl;
 
-    public PocketApiService(PocketItemRepository pocketItemRepository, MigrationStatusRepository migrationStatusRepository, PocketAuthorizationService authorizationService) {
+    public PocketApiService(PocketItemRepository pocketItemRepository,
+                            MigrationStatusRepository migrationStatusRepository,
+                            PocketAuthorizationService authorizationService) {
         this.migrationStatusRepository = migrationStatusRepository;
         this.authorizationService = authorizationService;
-        this.client = HttpClient.newBuilder().followRedirects(HttpClient.Redirect.NORMAL).connectTimeout(Duration.ofSeconds(20)).build();
+        this.client = HttpClient
+                .newBuilder()
+                .followRedirects(HttpClient.Redirect.NORMAL)
+                .connectTimeout(Duration.ofSeconds(20))
+                .build();
         this.mapper = new ObjectMapper();
         this.pocketItemMapper = PocketItemMapper.INSTANCE;
         this.pocketItemRepository = pocketItemRepository;
@@ -63,12 +69,18 @@ public class PocketApiService {
     public Integer importAllToDbSince(Instant sinceWhen) throws IOException, InterruptedException {
         var pocketResponse = sinceWhen(sinceWhen);
 
-        var models = pocketResponse.items().values().stream().map(pocketItemMapper::apiToEntity).toList();
+        var models = pocketResponse
+                .items()
+                .values()
+                .stream()
+                .map(pocketItemMapper::apiToEntity)
+                .toList();
 
         List<PocketItem> pocketItems = pocketItemRepository.saveAll(models);
 
         MigrationStatus migrationStatus = new MigrationStatus();
-        migrationStatus.id(UUID.randomUUID().toString());
+        migrationStatus.id(UUID.randomUUID()
+                               .toString());
         migrationStatus.date(Instant.now());
         migrationStatus.migratedItems(pocketItems.size());
         migrationStatusRepository.save(migrationStatus);
@@ -87,15 +99,25 @@ public class PocketApiService {
         while (true) {
             log.debug("offset:{}, count:{}", offset, count);
 
-            var pocketResponse = callGetApi(Map.of("count", count, "state", "all", "offset", offset, "sort", "oldest", "detailType", "complete"));
+            var pocketResponse = callGetApi(
+                    Map.of("count", count,
+                            "state", "all",
+                            "offset", offset,
+                            "sort", "oldest",
+                            "detailType", "complete"));
 
             Map<String, ListItem> items = pocketResponse.items();
-            log.info("Got {} items - since {}", items.size(), pocketResponse.since());
+            log.info("Got {} items", items.size());
             log.debug("response: {}", pocketResponse);
 
-            if (items.isEmpty()) break;
+            if (items.isEmpty())
+                break;
 
-            var models = pocketResponse.items().values().stream().map(pocketItemMapper::apiToEntity).toList();
+            var models = pocketResponse.items()
+                                       .values()
+                                       .stream()
+                                       .map(pocketItemMapper::apiToEntity)
+                                       .toList();
             importedItems.addAll(models);
 
             gotItems += items.size();
@@ -106,7 +128,8 @@ public class PocketApiService {
         }
 
         MigrationStatus migrationStatus = new MigrationStatus();
-        migrationStatus.id(UUID.randomUUID().toString());
+        migrationStatus.id(UUID.randomUUID()
+                               .toString());
         migrationStatus.date(Instant.now());
         migrationStatus.migratedItems(gotItems);
         migrationStatusRepository.save(migrationStatus);
@@ -128,7 +151,12 @@ public class PocketApiService {
         payloadData.putAll(extraFields);
 
         String payload = mapper.writeValueAsString(payloadData);
-        HttpRequest request = HttpRequest.newBuilder().POST(HttpRequest.BodyPublishers.ofString(payload)).uri(URI.create(pocketGetUrl)).header("Content-Type", "application/json").header("X-accept", "application/json").build();
+        HttpRequest request = HttpRequest.newBuilder()
+                                         .POST(HttpRequest.BodyPublishers.ofString(payload))
+                                         .uri(URI.create(pocketGetUrl))
+                                         .header("Content-Type", "application/json")
+                                         .header("X-accept", "application/json")
+                                         .build();
 
         HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
 
@@ -160,14 +188,21 @@ public class PocketApiService {
         log.error("Handling {} error", response.statusCode());
         ApiXHeaders apiXHeaders = ApiXHeaders.of(response);
 
-        throw new IllegalStateException(String.format("Http request failed with status: %s." + "Api pocket responded with 401, " + "error code: %d, " + "error description: %s", apiXHeaders.status(), apiXHeaders.errorCode(), apiXHeaders.error()));
+        throw new IllegalStateException(String.format(
+                "Http request failed with status: %s."
+                        + "Api pocket responded with 401, " + "error code: %d, "
+                        + "error description: %s",
+                apiXHeaders.status(), apiXHeaders.errorCode(), apiXHeaders.error()));
     }
 
     private void handle401(HttpResponse<String> response) {
         log.info("Handling 401 error");
         ApiXHeaders apiXHeaders = ApiXHeaders.of(response);
 
-        throw new IllegalStateException("Generate new token!. Authorization failed with status: '%%s'. Api pocket responded with 401, error code: %%d, %s".formatted("error description: %s".formatted(apiXHeaders.status(), apiXHeaders.errorCode(), apiXHeaders.error())));
+        throw new IllegalStateException(
+                "Generate new token!.Authorization failed with status: '%s'. Api pocket responded with 401, error code: %d, %s"
+                        .formatted(apiXHeaders.status(),
+                                apiXHeaders.errorCode(), apiXHeaders.error()));
     }
 
     private void logResponse(HttpResponse<String> response) {
@@ -183,6 +218,8 @@ public class PocketApiService {
     }
 
     public PocketUserCredentials getCreds() {
-        return authorizationService.getCredentials().orElseThrow(() -> new IllegalStateException("Not found saved credentials. Authorize to service first"));
+        return authorizationService.getCredentials()
+                                   .orElseThrow(() ->
+                                           new IllegalStateException("Not found saved credentials. Authorize to service first"));
     }
 }

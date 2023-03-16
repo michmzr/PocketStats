@@ -1,15 +1,28 @@
 <template>
-  <h1>Hello World</h1>
+  <div class="row mt-1">
+    <div class="col">
+      <TopTools></TopTools>
+    </div>
+  </div>
+
+  <div class="row mt-1">
+    <div class="col">
+      <ArchivedStatsChart></ArchivedStatsChart>
+    </div>
+  </div>
 </template>
 
 <script lang="ts">
 import {Options, Vue} from 'vue-class-component';
-import TopAuth from "@/components/TopAuth.vue";
+import ArchivedStatsChart from "@/components/ArchivedStatsChart.vue";
+import TopTools from "@/components/SyncPanel.vue";
 
 @Options({
   components: {
-    HomeAuth: TopAuth
+    ArchivedStatsChart,
+    TopTools
   },
 })
-export default class HomeView extends Vue {}
+export default class HomeView extends Vue {
+}
 </script>

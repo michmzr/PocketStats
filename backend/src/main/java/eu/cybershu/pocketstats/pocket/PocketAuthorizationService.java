@@ -31,24 +31,30 @@ public class PocketAuthorizationService {
     @Value("${auth.pocket.consumer-key}")
     private String pocketConsumerKey;
 
-    @Value("${auth.pocket.redirect_uri}")
-    private String pocketRedirectUrl;
-
-    @Value("${auth.pocket.url.request}")
-    private String pocketRequestUrl;
-
-    @Value("${auth.pocket.url.authorize_app}")
-    private String pocketAuthorizeUrl;
-
-    @Value("${auth.pocket.url.access_token}")
-    private String pocketAccessTokenRetrieveUrl;
+    private final String pocketRedirectUrl;
+    private final String pocketRequestUrl;
+    private final String pocketAuthorizeUrl;
+    private final String pocketAccessTokenRetrieveUrl;
 
     private UserCurrentlyAuthorising userCurrentlyAuthorising;
 
-    public PocketAuthorizationService() {
+    public PocketAuthorizationService(
+            @Value("${auth.pocket.redirect_uri}")
+            String pocketRedirectUrl,
+            @Value("${auth.pocket.url.request}")
+            String pocketRequestUrl,
+            @Value("${auth.pocket.url.authorize_app}")
+            String pocketAuthorizeUrl,
+            @Value("${auth.pocket.url.access_token}")
+            String pocketAccessTokenRetrieveUrl) {
+        this.pocketRedirectUrl = pocketRedirectUrl;
+        this.pocketRequestUrl = pocketRequestUrl;
+        this.pocketAuthorizeUrl = pocketAuthorizeUrl;
+        this.pocketAccessTokenRetrieveUrl = pocketAccessTokenRetrieveUrl;
         this.client = HttpClient.newBuilder()
-                .followRedirects(HttpClient.Redirect.NORMAL)
-                .connectTimeout(Duration.ofSeconds(20)).build();
+                                .followRedirects(HttpClient.Redirect.NORMAL)
+                                .connectTimeout(Duration.ofSeconds(20))
+                                .build();
         this.mapper = new ObjectMapper();
     }
 
@@ -88,12 +94,6 @@ public class PocketAuthorizationService {
             throw new IllegalArgumentException("Not acquired code");
         }
     }
-
-
-    public boolean isAuthSessionActive() {
-        return this.userCurrentlyAuthorising != null;
-    }
-
     public void startAuthProcess(String sessionId, String code, String loginLink) {
         log.info("Starting auth process - sessionId: {}", sessionId);
 

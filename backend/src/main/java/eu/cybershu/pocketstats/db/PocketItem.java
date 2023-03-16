@@ -4,6 +4,7 @@ import eu.cybershu.pocketstats.pocket.api.DomainMetadata;
 import eu.cybershu.pocketstats.pocket.api.ItemStatus;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
+import lombok.NoArgsConstructor;
 import org.springframework.data.annotation.Id;
 import org.springframework.lang.NonNull;
 
@@ -11,6 +12,7 @@ import java.time.Instant;
 import java.util.List;
 
 @Data
+@NoArgsConstructor
 @EqualsAndHashCode(of = {"id", "url", "title", "status", "timeAdded", "timeRead"})
 public class PocketItem {
     @Id

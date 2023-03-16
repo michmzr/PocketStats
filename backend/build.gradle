@@ -46,13 +46,18 @@ dependencies {
         exclude group: 'org.junit.vintage', module: 'junit-vintage-engine'
     }
 
-    implementation 'org.codehaus.groovy:groovy:3.0.14'
-    implementation 'org.codehaus.groovy:groovy-json:3.0.9'
-    testImplementation('org.spockframework:spock-core:2.3-groovy-3.0')
-    testImplementation('org.spockframework:spock-spring:2.3-groovy-3.0')
-    testImplementation('org.springframework.boot:spring-boot-starter-test')
-    implementation 'cglib:cglib-nodep:3.3.0'
-    testImplementation 'net.bytebuddy:byte-buddy-agent:1.12.20'
+    testImplementation 'org.apache.groovy:groovy-all:4.0.10'
+    testImplementation 'org.apache.groovy:groovy-json:4.0.10'
+    testImplementation('org.spockframework:spock-core:2.4-M1-groovy-4.0')
+    testImplementation('org.spockframework:spock-spring:2.4-M1-groovy-4.0')
+    testImplementation 'cglib:cglib-nodep:3.3.0'
+    testImplementation 'net.bytebuddy:byte-buddy-agent:1.14.1'
+
+    testImplementation 'de.flapdoodle.embed:de.flapdoodle.embed.mongo.spring30x:4.6.1'
+
+    testImplementation 'org.testcontainers:testcontainers:1.17.6'
+    testImplementation "org.testcontainers:spock:1.17.6"
+    testImplementation "org.testcontainers:mongodb:1.17.6"
 }
 
 dependencyManagement {

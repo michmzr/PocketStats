@@ -58,9 +58,14 @@ public class ApiXHeaders {
     Integer limitKeyReset;
 
     public static ApiXHeaders of(HttpResponse<String> response) {
-        final Function<HeaderNames, Integer> getHeaderValue = (HeaderNames name) -> response.headers().firstValue(name.headerName).map(Integer::valueOf).orElse(null);
+        final Function<HeaderNames, Integer> getHeaderValue = (HeaderNames name) -> response.headers()
+                                                                                            .firstValue(name.headerName)
+                                                                                            .map(Integer::valueOf)
+                                                                                            .orElse(null);
 
-        final Function<HeaderNames, String> getHeaderStringValue = (HeaderNames name) -> response.headers().firstValue(name.headerName).orElse(null);
+        final Function<HeaderNames, String> getHeaderStringValue = (HeaderNames name) -> response.headers()
+                                                                                                 .firstValue(name.headerName)
+                                                                                                 .orElse(null);
 
         var builder = ApiXHeaders.builder();
 

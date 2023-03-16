@@ -2,7 +2,6 @@ package eu.cybershu.pocketstats.sync;
 
 import eu.cybershu.pocketstats.api.ApiResponse;
 import eu.cybershu.pocketstats.db.MigrationStatus;
-import eu.cybershu.pocketstats.db.PocketItemRepository;
 import eu.cybershu.pocketstats.pocket.PocketApiService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.MediaType;
@@ -19,11 +18,9 @@ import java.time.Instant;
 @RequestMapping("/sync/")
 public class SyncController {
     private final PocketApiService pocketApiService;
-    private final PocketItemRepository repository;
 
-    public SyncController(PocketApiService pocketApiService, PocketItemRepository repository) {
+    public SyncController(PocketApiService pocketApiService) {
         this.pocketApiService = pocketApiService;
-        this.repository = repository;
     }
 
     @GetMapping(value = "/last",
@@ -33,10 +30,12 @@ public class SyncController {
 
         log.debug("import from last - status={}", lastMigration);
 
-        return new ApiResponse<>(0, "ok", new SyncStatus(
-                lastMigration.date(),
-                lastMigration.migratedItems()
-        ));
+        SyncStatus syncStatus = new SyncStatus(
+                lastMigration != null ? lastMigration.date() : null,
+                lastMigration != null ? lastMigration.migratedItems() : null
+        );
+
+        return new ApiResponse<>(0, "ok", syncStatus);
     }
 
     @PostMapping(value = "/last",

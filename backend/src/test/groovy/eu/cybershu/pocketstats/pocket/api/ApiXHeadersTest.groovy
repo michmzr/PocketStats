@@ -47,7 +47,7 @@ class ApiXHeadersTest extends Specification {
         def response = Stub(HttpResponse)
         def props = [
                 "X-Error-Code"      : [],
-                "X-Limit-User-Reset": [""],
+                "X-Limit-User-Reset": [],
                 "X-Limit-Key-Reset" : []
         ]
 

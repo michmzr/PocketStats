@@ -2,15 +2,25 @@
   <div class="card" v-if="authorized && loadedData">
     <div class="card-body">
       <div>
-        <label for="example-datepicker">Choose a days</label>
-        <Datepicker id="formDayStart" v-model="formDayStart"
-                    v-on:update:modelValue="onChangedDatePeriod"
-                    :upper-limit="formDayEnd" class="mb-2" inputFormat="dd-MM-yyyy"/>
-        <Datepicker id="formDayEnd" v-model="formDayEnd"
-                    v-on:update:modelValue="onChangedDatePeriod"
-                    :upperLimit="new Date()" class="mb-2" inputFormat="dd-MM-yyyy"/>
+        <form class="form-inline">
+          <label class="my-1 mr-2">Choose days</label>
+
+          <div class="custom-control custom-checkbox my-1 mr-sm-2">
+            <Datepicker id="formDayStart" v-model="formDayStart"
+                        v-on:update:modelValue="onChangedDatePeriod"
+                        :upper-limit="formDayEnd" class="mb-2" inputFormat="dd-MM-yyyy"/>
+          </div>
+
+          <div class="custom-control custom-checkbox my-1 mr-sm-2">
+            <Datepicker id="formDayEnd" v-model="formDayEnd"
+                        v-on:update:modelValue="onChangedDatePeriod"
+                        :upperLimit="new Date()" class="mb-2" inputFormat="dd-MM-yyyy"/>
+          </div>
+
+          <button v-on:click="onChangedDatePeriod" class="btn btn-primary mb-2">Apply</button>
+        </form>
       </div>
-      <div>
+      <div style="height: 25em">
         <Line v-if="loadedData" :data="chartData" :options="chartOptions"/>
       </div>
     </div>
@@ -27,6 +37,7 @@ import Datepicker from 'vue3-datepicker'
 import {CategoryScale, Chart as ChartJS, Legend, LinearScale, LineElement, PointElement, Title, Tooltip} from 'chart.js'
 import {Line} from 'vue-chartjs'
 import {subDays} from "date-fns";
+import {TimePeriod} from "@/models/time-models";
 
 ChartJS.register(
     CategoryScale,
@@ -59,7 +70,7 @@ export default class ArchivedStatsChart extends Vue {
     labels: [] as Date[],
     datasets: [
       {
-        label: 'Archived items',
+        label: 'Read items in day',
         backgroundColor: '#f87979',
         data: [] as number[]
       }
@@ -68,9 +79,15 @@ export default class ArchivedStatsChart extends Vue {
 
   chartOptions = {
     responsive: true,
-    maintainAspectRatio: false
+    maintainAspectRatio: false,
+    scales: {
+      y: {
+        suggestedMin: 0,
+        suggestedMax: 100,
+        steps: 5
+      }
+    }
   }
-
 
   isAuthorized() {
     this.authorized = this.sessionStore.isAuthorized
@@ -96,7 +113,7 @@ export default class ArchivedStatsChart extends Vue {
   onChangedDatePeriod() {
     this.loadedData = false;
 
-    this.statsService.getArchivedItemsPerDay(this.formDayStart, this.formDayEnd)
+    this.statsService.getArchivedItemsPerDay(new TimePeriod(this.formDayStart, this.formDayEnd))
         .then((response) => {
           this.onLoadedStatsData(response.data.data as IDayStats)
         });
@@ -105,17 +122,21 @@ export default class ArchivedStatsChart extends Vue {
   }
 
   onLoadedStatsData(daysStats: IDayStats) {
-    console.info("Data loaded")
-
     this.loadedData = true
     this.daysStats = daysStats
     this.clearChart()
 
     const self = this;
+    let maxY = 0;
     daysStats.stats.reverse().forEach(dayStats => {
       self.chartData.labels.push(dayStats.day)
       self.chartData.datasets[0].data.push(dayStats.number)
+
+      if (dayStats.number > maxY)
+        maxY = dayStats.number
     })
+
+    this.chartOptions.scales.y.suggestedMax = maxY;
   }
 }
 

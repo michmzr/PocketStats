@@ -14,12 +14,6 @@ auth:
     consumer-key: ${POCKET_CONSUMER_KEY}
     redirect_uri: http://localhost:8080/pocket/auth/token
 
-shell.out:
-  info: CYAN
-  success: GREEN
-  warning: YELLOW
-  error: RED
-
 management:
   endpoints:
     web:
