@@ -1,19 +1,20 @@
 <template>
-  <div>
-    <nav class="navbar navbar-expand-lg navbar-light bg-light">
-      <a class="navbar-brand" href="#">PocketStats</a>
+  <div class="container text-center">
+    <div class="col">
+      <nav class="navbar navbar-expand-lg navbar-light bg-light">
+        <a class="navbar-brand" href="#">PocketStats</a>
 
-      <div class="collapse navbar-collapse" id="navbarNav">
-        <ul class="navbar-nav">
-          <li class="nav-item">
-            <router-link to="/" class="nav-link">Home</router-link>
-          </li>
-        </ul>
-      </div>
+        <div class="collapse navbar-collapse" id="navbarNav">
+          <ul class="navbar-nav">
+            <li class="nav-item">
+              <router-link to="/" class="nav-link">Home</router-link>
+            </li>
+          </ul>
+        </div>
 
-      <TopAuth></TopAuth>
-    </nav>
-
+        <TopAuth></TopAuth>
+      </nav>
+    </div>
   </div>
   <main role="main" class="container">
     <div class="container text-center">
