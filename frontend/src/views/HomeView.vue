@@ -14,12 +14,12 @@
 
 <script lang="ts">
 import {Options, Vue} from 'vue-class-component';
-import ArchivedStatsChart from "@/components/ArchivedStatsChart.vue";
+import DailyStatsChart from "@/components/DailyStatsChart.vue";
 import TopTools from "@/components/SyncPanel.vue";
 
 @Options({
   components: {
-    ArchivedStatsChart,
+    ArchivedStatsChart: DailyStatsChart,
     TopTools
   },
 })

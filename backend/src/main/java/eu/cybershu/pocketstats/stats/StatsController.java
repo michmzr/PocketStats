@@ -19,14 +19,15 @@ public class StatsController {
         this.statsService = statsService;
     }
 
-    @PostMapping(value = "/archived",
+    @PostMapping(value = "/byDay",
             produces = MediaType.APPLICATION_JSON_VALUE)
-    public ApiResponse<DayStatsRecords> archived(
+    public ApiResponse<DayStatsRecords> statsByDay(
             @RequestBody StatsRequest statsRequest
     ) {
-        log.info("Stats for {} - {}", statsRequest.start(), statsRequest.end());
+        log.info("Stats for {}", statsRequest);
 
-        DayStatsRecords records = statsService.getDayStatsRecords(statsRequest.start(), statsRequest.end(), DayStatsType.ARCHIVED);
+        DayStatsRecords records = statsService.getDayStatsRecords(
+                statsRequest.start(), statsRequest.end(), statsRequest.type());
 
         return new ApiResponse<>(0, null, records);
     }

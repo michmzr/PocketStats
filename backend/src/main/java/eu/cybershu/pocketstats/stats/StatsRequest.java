@@ -11,7 +11,9 @@ public record StatsRequest(
         LocalDate start,
         @NotNull
         @JsonFormat(pattern = "dd-MM-yyyy")
-        LocalDate end
-) {
+        LocalDate end,
 
+        @NotNull
+        DayStatsType type
+) {
 }

@@ -56,7 +56,6 @@ export class AuthorizationService {
             return false;
         }
 
-        //todo update pina state
         return retryAuthorized(this);
     }
 }

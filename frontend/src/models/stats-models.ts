@@ -3,29 +3,21 @@ export interface IDayStat {
     number: number;
 }
 
-export class DayStat implements IDayStat {
-    day: Date;
-    number: number;
-
-    constructor(day: Date, number: number) {
-        this.day = day;
-        this.number = number;
-    }
+export enum DayStatsType {
+    ARCHIVED = "ARCHIVED",
+    TODO = "TODO"
 }
 
 export interface IDayStats {
     stats: IDayStat[],
-    archived: boolean,
     type: string
 }
 
 export class DayStats implements IDayStats {
-    archived: boolean;
     stats: IDayStat[];
     type: string;
 
-    constructor(archived: boolean, stats: IDayStat[], type: string) {
-        this.archived = archived;
+    constructor(stats: IDayStat[], type: string) {
         this.stats = stats;
         this.type = type;
     }

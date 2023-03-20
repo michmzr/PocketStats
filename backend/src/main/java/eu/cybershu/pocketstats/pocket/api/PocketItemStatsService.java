@@ -12,10 +12,7 @@ import org.springframework.stereotype.Service;
 import java.time.LocalDate;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
-import java.util.Arrays;
-import java.util.Date;
-import java.util.LinkedList;
-import java.util.List;
+import java.util.*;
 
 @Slf4j
 @Service
@@ -62,6 +59,8 @@ public class PocketItemStatsService {
                     LocalDate.parse(day, formatter), items
             ));
         }
+
+        days.sort(Comparator.comparing(DayStat::day));
 
         return new DayStatsRecords(days, type);
     }
