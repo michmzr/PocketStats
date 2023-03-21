@@ -1,9 +1,11 @@
 <template>
   <div v-if="authorized" class="card">
     <div class="card-body">
+      <h5 class="card-title">Daily stats of added and read items.</h5>
+
       <div>
         <form class="form-inline">
-          <label class="my-1 mr-2">Choose days</label>
+          <label class="my-1 mr-2">Select period</label>
 
           <div class="custom-control custom-checkbox my-1 mr-sm-2">
             <Datepicker id="formDayStart" v-model="formDayStart"

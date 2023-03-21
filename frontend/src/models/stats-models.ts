@@ -13,12 +13,12 @@ export interface IDayStats {
     type: string
 }
 
-export class DayStats implements IDayStats {
-    stats: IDayStat[];
-    type: string;
+export interface ITopTag {
+    name: string,
+    count: number
+}
 
-    constructor(stats: IDayStat[], type: string) {
-        this.stats = stats;
-        this.type = type;
-    }
+export interface ITopTags {
+    tags: ITopTag[],
+    count: number
 }

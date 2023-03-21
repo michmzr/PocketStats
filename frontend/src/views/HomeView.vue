@@ -7,7 +7,13 @@
 
   <div class="row mt-1">
     <div class="col">
-      <ArchivedStatsChart></ArchivedStatsChart>
+      <DailyStatsChart></DailyStatsChart>
+    </div>
+  </div>
+
+  <div class="row mt-1">
+    <div class="col">
+      <TopTags></TopTags>
     </div>
   </div>
 </template>
@@ -16,10 +22,12 @@
 import {Options, Vue} from 'vue-class-component';
 import DailyStatsChart from "@/components/DailyStatsChart.vue";
 import TopTools from "@/components/SyncPanel.vue";
+import TopTags from "@/components/TopTags.vue";
 
 @Options({
   components: {
-    ArchivedStatsChart: DailyStatsChart,
+    TopTags,
+    DailyStatsChart,
     TopTools
   },
 })

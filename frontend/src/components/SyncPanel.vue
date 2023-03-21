@@ -3,7 +3,7 @@
     <div class="card-body">
       <strong>Last sync:</strong> {{ lastSyncMsg }}
 
-      <b-button variant="link" :disabled="syncing ? true : false"
+      <b-button variant="link" :disabled="syncing"
                 size="sm" v-on:click="sync">
         <span v-if="!syncing">
           <font-awesome-icon icon="spinner"/>
@@ -24,7 +24,6 @@ import {useSessionStore, useSyncStore} from "@/store";
 import {SyncStatus} from "@/models/sync-models";
 import {SyncService} from "@/services/sync-service";
 import {formatRelative} from "date-fns";
-
 
 export default class SyncPanel extends Vue {
   authorized: Boolean = false;

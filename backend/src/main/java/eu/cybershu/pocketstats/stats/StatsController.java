@@ -4,10 +4,9 @@ import eu.cybershu.pocketstats.api.ApiResponse;
 import eu.cybershu.pocketstats.pocket.api.PocketItemStatsService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.MediaType;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
 
 @Slf4j
 @RestController
@@ -30,6 +29,15 @@ public class StatsController {
                 statsRequest.start(), statsRequest.end(), statsRequest.type());
 
         return new ApiResponse<>(0, null, records);
+    }
+
+    @GetMapping(value = "/topTags", produces = MediaType.APPLICATION_JSON_VALUE)
+    public ApiResponse<TopTags> topTags(@RequestParam(required = false) Integer count) {
+        count = count == null ? 10 : count;
+        log.info("Top {} tags", count);
+
+        List<TopTag> topTags = statsService.getTopTags(count);
+        return new ApiResponse<>(0, null, new TopTags(topTags, count));
     }
 
 }

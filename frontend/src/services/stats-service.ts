@@ -2,7 +2,7 @@ import {ConfigsService} from "@/services/configs-service";
 import axios from "axios";
 import {format} from "date-fns";
 import {TimePeriod} from "@/models/time-models";
-import {DayStatsType} from "@/models/stats-models";
+import {DayStatsType, ITopTags} from "@/models/stats-models";
 
 export class StatsService {
     configsService = new ConfigsService();
@@ -15,6 +15,14 @@ export class StatsService {
                 type: type
             }).then((response) => {
                 return response.data
+            });
+    }
+
+
+    getTopTags(count: number) {
+        return axios
+            .get(`${this.configsService.backendUrl()}/stats/topTags?count=${count}`).then((response) => {
+                return response.data.data as ITopTags
             });
     }
 }
