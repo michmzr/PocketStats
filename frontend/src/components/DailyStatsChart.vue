@@ -73,12 +73,14 @@ export default class DailyStatsChart extends Vue {
       {
         label: 'Read items in day',
         backgroundColor: '#f87979',
+        borderColor: '#f87979',
         data: [] as number[],
         yAxisID: 'y',
       },
       {
         label: 'Added items in day',
         backgroundColor: '#0a4687',
+        borderColor: '#0a4687',
         data: [] as number[],
         yAxisID: 'y1',
       }

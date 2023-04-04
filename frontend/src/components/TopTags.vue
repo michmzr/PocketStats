@@ -57,13 +57,8 @@ export default class TopTags extends Vue {
     let self = this
 
     this.statsService.getTopTags(this.limitTags).then((responseData: ITopTags) => {
-      let topTags = responseData
-
-      console.log(`top tags: ${JSON.stringify(responseData)}`)
-      self.topTags = topTags.tags
+      self.topTags = responseData.tags
       self.loadedData = true
-
-      console.log("updated")
     });
   }
 }

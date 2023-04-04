@@ -2,7 +2,7 @@ import {ConfigsService} from "@/services/configs-service";
 import axios from "axios";
 import {format} from "date-fns";
 import {TimePeriod} from "@/models/time-models";
-import {DayStatsType, ITopTags} from "@/models/stats-models";
+import {DayStatsType, ILangStats, ITopTags,} from "@/models/stats-models";
 
 export class StatsService {
     configsService = new ConfigsService();
@@ -18,11 +18,19 @@ export class StatsService {
             });
     }
 
-
     getTopTags(count: number) {
         return axios
-            .get(`${this.configsService.backendUrl()}/stats/topTags?count=${count}`).then((response) => {
+            .get(`${this.configsService.backendUrl()}/stats/topTags?count=${count}`)
+            .then((response) => {
                 return response.data.data as ITopTags
+            });
+    }
+
+    getLangStats() {
+        return axios
+            .get(`${this.configsService.backendUrl()}/stats/langs`)
+            .then((response) => {
+                return response.data.data as ILangStats
             });
     }
 }

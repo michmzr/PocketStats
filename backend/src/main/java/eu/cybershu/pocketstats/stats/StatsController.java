@@ -40,4 +40,9 @@ public class StatsController {
         return new ApiResponse<>(0, null, new TopTags(topTags, count));
     }
 
+    @GetMapping(value = "/langs", produces = MediaType.APPLICATION_JSON_VALUE)
+    public ApiResponse<LangStats> langsStats() {
+        var langStats = statsService.getLangStats();
+        return new ApiResponse<>(0, null, new LangStats(langStats));
+    }
 }

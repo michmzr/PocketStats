@@ -22,3 +22,7 @@ export interface ITopTags {
     tags: ITopTag[],
     count: number
 }
+
+export interface ILangStats {
+    langCount: Map<string, number>
+}

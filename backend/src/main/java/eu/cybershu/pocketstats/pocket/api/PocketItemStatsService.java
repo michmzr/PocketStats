@@ -10,6 +10,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.bson.Document;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.stereotype.Service;
+import org.springframework.util.StringUtils;
 
 import java.time.LocalDate;
 import java.time.ZoneId;
@@ -105,5 +106,33 @@ public class PocketItemStatsService {
 
     private MongoCollection<Document> getPocketItemsCollection() {
         return mongoTemplate.getCollection("pocketItem");
+    }
+
+    public Map<String, Long> getLangStats() {
+        log.info("Calculating lang stats");
+
+        var collection = getPocketItemsCollection();
+        AggregateIterable<Document> resultsIter = collection.aggregate(Arrays.asList(new Document("$group",
+                        new Document("_id", "$lang")
+                                .append("count",
+                                        new Document("$sum", 1L))),
+                new Document("$sort",
+                        new Document("count", -1L))
+        ));
+
+        Map<String, Long> langStats = new HashMap<>();
+        for (Document docs : resultsIter) {
+            String name = docs.getString("_id");
+            long count = docs.getLong("count");
+
+            if (!StringUtils.hasLength(name))
+                name = "unknown";
+
+            langStats.put(
+                    name, count
+            );
+        }
+
+        return langStats;
     }
 }
