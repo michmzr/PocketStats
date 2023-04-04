@@ -19,11 +19,11 @@ jobs:
 
     - name: Backend tests
       working-directory: backend
-      run: ./gradlew test
+      run: ../gradlew test
 
     - name: Build backend
       working-directory: backend
-      run: ./gradlew build
+      run: ../gradlew build
 
     - name: Build frontend
       working-directory: frontend
