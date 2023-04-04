@@ -34,4 +34,9 @@ class PocketItemBuilder {
 
         item
     }
+
+    static PocketItem withLang(PocketItem item, String lang) {
+        item.lang(lang)
+        item
+    }
 }

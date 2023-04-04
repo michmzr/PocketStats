@@ -1,6 +1,8 @@
-package eu.cybershu.pocketstats.pocket.api
+package eu.cybershu.pocketstats.pocket.stats
 
 import eu.cybershu.pocketstats.db.PocketItemRepository
+import eu.cybershu.pocketstats.pocket.api.BaseTest
+import eu.cybershu.pocketstats.pocket.api.PocketItemStatsService
 import eu.cybershu.pocketstats.stats.DayStatsRecords
 import eu.cybershu.pocketstats.stats.DayStatsType
 import eu.cybershu.pocketstats.utils.TimeUtils
@@ -13,8 +15,7 @@ import java.time.Instant
 import java.time.LocalDate
 import java.time.temporal.ChronoUnit
 
-import static eu.cybershu.pocketstats.PocketItemBuilder.archived
-import static eu.cybershu.pocketstats.PocketItemBuilder.todo
+import static eu.cybershu.pocketstats.PocketItemBuilder.*
 
 @SpringBootTest
 @AutoConfigureDataMongo
@@ -136,12 +137,33 @@ class PocketItemStatsServiceIntTest extends BaseTest {
                     start, end, DayStatsType.TODO
             )
         then:
-            result.type() == DayStatsType.TODO
+        result.type() == DayStatsType.TODO
         and: "assert numbers"
-            assertNumberInDay(result, start, 3)
-            assertNumberInDay(result, end.minusDays(5), 4)
-            assertNumberInDay(result, end.minusDays(2), 1)
-            assertNumberInDay(result, end, 3)
+        assertNumberInDay(result, start, 3)
+        assertNumberInDay(result, end.minusDays(5), 4)
+        assertNumberInDay(result, end.minusDays(2), 1)
+        assertNumberInDay(result, end, 3)
+    }
+
+    def "given items with different lang expect counted languages by name"() {
+        given:
+        def items = [
+                withLang(todo(Instant.now(), "item 1-pl"), "pl"),
+                withLang(todo(Instant.now(), "item 2-pl"), "pl"),
+                withLang(todo(Instant.now(), "item 3-en"), "en"),
+                withLang(todo(Instant.now(), "item 4-en"), "en"),
+                withLang(todo(Instant.now(), "item 5-en"), "en"),
+                withLang(todo(Instant.now(), "item 6-pt"), "pt")
+        ]
+        assert repository.saveAll(items).size() == items.size()
+        when:
+        def result = statsService.getLangStats()
+        then:
+        !result.isEmpty()
+        and:
+        result.pl == 2
+        result.en == 3
+        result.pt == 1
     }
 
     private void assertNumberInDay(DayStatsRecords dayStatsRecords, LocalDate date, Integer expected) {
