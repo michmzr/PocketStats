@@ -39,7 +39,7 @@ jobs:
         key: ${{ runner.os }}-sonar
         restore-keys: ${{ runner.os }}-sonar
     - name: Build and analyze
-      run: ./gradlew build jacocoTestReport sonarqube --info
+      run: ./gradlew build jacocoTestReport sonar --info
       env:
         # SonarCloud access token should be generated from https://sonarcloud.io/account/security/
         SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
