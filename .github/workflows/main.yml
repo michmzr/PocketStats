@@ -5,6 +5,7 @@ on: [push, pull_request]
 jobs:
   static-analysis:
    runs-on: ubuntu-latest
+   name: "SonarScan analysis"
 
    steps:
     - name: Checkout code
@@ -59,6 +60,7 @@ jobs:
         working-directory: backend
         run: ../gradlew test
   build:
+    needs: static-analysis
     runs-on: ubuntu-latest
 
     steps:
@@ -70,12 +72,6 @@ jobs:
           distribution: 'temurin'
           java-version: '17'
           check-latest: true
-      - name: Cache Gradle packages
-        uses: actions/cache@v3
-        with:
-          path: ~/.gradle/caches
-          key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle') }}
-          restore-keys: ${{ runner.os }}-gradle
       - name: Build backend
         working-directory: backend
         run: ../gradlew build
