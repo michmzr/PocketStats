@@ -29,6 +29,8 @@ jobs:
         restore-keys: ${{ runner.os }}-gradle
     - name: Analyze with SonarCloud
       uses: sonarsource/sonarcloud-github-action@master
+      env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
       with:
         args: >
           -Dsonar.organization=michmzr
