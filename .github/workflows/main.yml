@@ -15,16 +15,33 @@ jobs:
         distribution: 'temurin'
         java-version: '17'
         check-latest: true
-    - name: Analyze with SonarCloud
-      uses: sonarsource/sonarcloud-github-action@master
-      env:
-          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+#     - name: Analyze with SonarCloud
+#       uses: sonarsource/sonarcloud-github-action@master
+#       env:
+#           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+#       with:
+#         args: >
+#           -Dsonar.organization=michmzr
+#           -Dsonar.projectKey=michmzr_PocketStats
+#           -Dsonar.host.url=https://sonarcloud.io
+#           -Dsonar.verbose=true
+    - name: Cache Gradle packages
+      uses: actions/cache@v1
       with:
-        args: >
-          -Dsonar.organization=michmzr
-          -Dsonar.projectKey=michmzr_PocketStats
-          -Dsonar.host.url=https://sonarcloud.io
-          -Dsonar.verbose=true
+        path: ~/.gradle/caches
+        key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle') }}
+        restore-keys: ${{ runner.os }}-gradle
+    - name: Cache SonarCloud packages
+      uses: actions/cache@v1
+      with:
+        path: ~/.sonar/cache
+        key: ${{ runner.os }}-sonar
+        restore-keys: ${{ runner.os }}-sonar
+    - name: Build and analyze
+      run: ./gradlew build jacocoTestReport sonarqube --info
+      env:
+        # SonarCloud access token should be generated from https://sonarcloud.io/account/security/
+        SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
        
   tests:
     runs-on: ubuntu-latest
