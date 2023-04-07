@@ -10,9 +10,12 @@ buildscript {
 
 plugins {
     id "org.sonarqube" version "3.5.0.2730"
+    id "jacoco"
 }
+
+apply plugin: "jacoco"
 
 allprojects {
     group = 'eu.cybershu'
-    version = '2.0'
+    version = '2.1'
 }
