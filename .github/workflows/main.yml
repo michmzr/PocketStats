@@ -31,7 +31,7 @@ jobs:
         env:
           SONAR_HOST_URL: ${{ env.SONAR_HOST_URL }}
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-        run: ./gradlew build sonarqube --info
+        run: ./gradlew build sonar --info
       - name: Backend tests
         working-directory: backend
         run: ../gradlew test
