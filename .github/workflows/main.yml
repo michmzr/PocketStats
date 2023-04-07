@@ -30,8 +30,6 @@ jobs:
     - name: Analyze with SonarCloud
       uses: sonarsource/sonarcloud-github-action@master
       with:
-        SONAR_HOST_URL: ${{ env.SONAR_HOST_URL }}
-        SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
         args: >
           -Dsonar.organization=michmzr
           -Dsonar.projectKey=michmzr_PocketStats
