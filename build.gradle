@@ -19,3 +19,11 @@ allprojects {
     group = 'eu.cybershu'
     version = '2.1'
 }
+
+jacocoTestReport {
+    reports {
+        xml.enabled true
+        csv.enabled true
+        html.destination "${buildDir}/jacocoHtml"
+    }
+}
