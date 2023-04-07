@@ -27,19 +27,19 @@ jobs:
           path: ~/.gradle/caches
         key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle') }}
         restore-keys: ${{ runner.os }}-gradle
-    - name: Build and analyze
-      env:
-        SONAR_HOST_URL: ${{ env.SONAR_HOST_URL }}
-        SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-      run: ./gradlew build sonarqube --info
-    - name: Backend tests
-      working-directory: backend
-      run: ../gradlew test
+      - name: Build and analyze
+        env:
+          SONAR_HOST_URL: ${{ env.SONAR_HOST_URL }}
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+        run: ./gradlew build sonarqube --info
+      - name: Backend tests
+        working-directory: backend
+        run: ../gradlew test
 
-    - name: Build backend
-      working-directory: backend
-      run: ../gradlew build
+      - name: Build backend
+        working-directory: backend
+        run: ../gradlew build
 
-    - name: Build frontend
-      working-directory: frontend
-      run: npm install && npm run build
+      - name: Build frontend
+        working-directory: frontend
+        run: npm install && npm run build
