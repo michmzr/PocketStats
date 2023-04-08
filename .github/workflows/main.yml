@@ -68,9 +68,12 @@ jobs:
           distribution: 'temurin'
           java-version: '17'
           check-latest: false #todo set true
-      - name: Build backend
-        working-directory: backend
-        run: ../gradlew build --debug
+      - uses: gradle/gradle-build-action@v2.4.0
+        with:
+           arguments: build
+#       - name: Build backend
+#         working-directory: backend
+#         run: ../gradlew build --debug
       #      - name: Build frontend
       #        working-directory: frontend
       #        run: npm install && npm run build
