@@ -71,3 +71,9 @@ test {
 tasks.named('test') {
     useJUnitPlatform()
 }
+
+tasks.jar {
+    manifest {
+        attributes["Main-Class"] = "eu.cybershu.pocketstats.PocketStatsApplication"
+    }
+}
