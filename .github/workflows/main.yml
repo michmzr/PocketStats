@@ -71,7 +71,7 @@ jobs:
       - uses: gradle/gradle-build-action@v2.4.0
         with:
            gradle-version: current
-           arguments: build -x test
+           arguments: shadowJar -x test
 #       - name: Build backend
 #         working-directory: backend
 #         run: ../gradlew build --debug
@@ -88,5 +88,4 @@ jobs:
         run: 'curl "${{ steps.deploy.outputs.url }}"'
       - name: Deploy to Google Cloud App Engine
         run: |
-         gcloud app deploy --quiet --project ${{ secrets.GCP_PROJECT_ID }} ./build/libs/*.jar  --log-http --verbosity=debug
-   
+          gcloud app deploy --quiet --project ${{ secrets.GCP_PROJECT_ID }} ./backend/build/libs/*.jar  --log-http --verbosity=debug   
