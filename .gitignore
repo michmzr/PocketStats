@@ -154,9 +154,9 @@ gradle-app.setting
 !/gradle/
 
 #ENV
-/env_dev.json
-/env_master.json
-/pocket-creds.json
+env_dev.json
+env_master.json
+pocket-creds.json
 
 # Frontend
 ./frontend/node_modules!/env_master.json

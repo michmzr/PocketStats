@@ -75,6 +75,7 @@ tasks.named('test') {
 }
 
 jar {
+    archiveFileName = 'backend.jar'
     manifest {
         attributes 'Main-Class': 'eu.cybershu.pocketstats.PocketStatsApplication'
     }
