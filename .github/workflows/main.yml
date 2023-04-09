@@ -90,7 +90,7 @@ jobs:
           deliverables: app.yaml
           env_vars: |-
             POCKET_CONSUMER_KEY=${{secrets.POCKET_CONSUMER_KEY}}
-            MONGODB_DB=${{env.MONGODB_DB}}
+            MONGODB_DB=${{vars.MONGODB_DB}}
             MONGODB_URI=${{secrets.MONGODB_URI}}
       - id: 'test'
         run: 'curl "${{ steps.deploy.outputs.url }}"'
