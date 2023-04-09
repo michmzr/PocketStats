@@ -85,4 +85,5 @@ jobs:
         uses: 'google-github-actions/setup-gcloud@v1'
       - name: Deploy to Google Cloud App Engine
         run: |
-          gcloud app deploy --quiet --project ${{ secrets.GCP_PROJECT_ID }} ./build/libs/*.jar
+          gcloud app deploy --quiet --project ${{ secrets.GCP_PROJECT_ID }} ./build/libs/*.jar  --log-http --verbosity=debug
+   
