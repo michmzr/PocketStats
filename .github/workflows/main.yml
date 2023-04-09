@@ -94,6 +94,10 @@ jobs:
             MONGODB_URI=${{secrets.MONGODB_URI}}
       - id: 'test'
         run: 'curl "${{ steps.deploy.outputs.url }}"'
+      - uses: actions/upload-artifact@v3
+        with:
+           name: backend.jar
+           path: ./backend/build/libs/backend.jar
 #      - name: Deploy to Google Cloud App Engine
 #        run: |
 #          gcloud app deploy --quiet --project ${{ secrets.GCP_PROJECT_ID }} ./backend/build/libs/*.jar  --log-http --verbosity=debug
