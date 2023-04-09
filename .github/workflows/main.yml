@@ -84,8 +84,8 @@ jobs:
           credentials_json: ${{ secrets.GCP_SA_KEY }}
       - name: 'Set up Cloud SDK'
         uses: 'google-github-actions/setup-gcloud@v1'
-      - id: 'test'
-        run: 'curl "${{ steps.deploy.outputs.url }}"'
       - name: Deploy to Google Cloud App Engine
         run: |
           gcloud app deploy --quiet --project ${{ secrets.GCP_PROJECT_ID }} ./backend/build/libs/*.jar  --log-http --verbosity=debug   
+      - id: 'test'
+        run: 'curl "${{ steps.deploy.outputs.url }}"'
