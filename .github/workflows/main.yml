@@ -88,10 +88,10 @@ jobs:
         uses: 'google-github-actions/deploy-appengine@v1'
         with:
           deliverables: app.yaml
-          deployables: ./backend/build/libs/*.jar
           env_vars: |-
-            FOO=bar
-            ZIP=zap
+            POCKET_CONSUMER_KEY=${{secrets.POCKET_CONSUMER_KEY}}
+            MONGODB_DB=${{env.MONGODB_DB}}
+            MONGODB_URI=${{secrets.MONGODB_URI}}
       - id: 'test'
         run: 'curl "${{ steps.deploy.outputs.url }}"'
 #      - name: Deploy to Google Cloud App Engine
