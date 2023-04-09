@@ -30,10 +30,7 @@ spring:
   datasource.driver-class-name: com.mysql.jdbc.Driver
   data:
     mongodb:
-      username: admin
-      password: admin
-      database: db
       authentication-database: admin
       auto-index-creation: true
-      host: localhost
-      port: 27017
+      uri: ${MONGODB_URI}
+      database: ${MONGODB_DB}

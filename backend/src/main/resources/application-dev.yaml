@@ -1,0 +1,14 @@
+spring:
+  jackson:
+    serialization:
+      WRITE_DATES_AS_TIMESTAMPS: false
+  datasource.driver-class-name: com.mysql.jdbc.Driver
+  data:
+    mongodb:
+      username: ${MONGODB_USER:admin}
+      password: ${MONGODB_PASS:admin}
+      database: ${MONGODB_DB:db}
+      authentication-database: admin
+      auto-index-creation: true
+      host: ${MONGODB_HOST:localhost}
+      port: ${MONGODB_PORT:27017}
