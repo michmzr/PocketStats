@@ -70,7 +70,7 @@ jobs:
           check-latest: false #todo set true
       - name: Build backend
         uses: gradle/gradle-build-action@v2.4.0
-        working-directory: backend
+        build-root-directory: backend
         with:
           gradle-version: current
           arguments: shadowJar -x test
