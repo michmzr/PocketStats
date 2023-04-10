@@ -70,9 +70,9 @@ jobs:
           check-latest: false #todo set true
       - name: Build backend
         uses: gradle/gradle-build-action@v2.4.0
-        build-root-directory: backend
         with:
           gradle-version: current
+          build-root-directory: backend
           arguments: shadowJar -x test
       - id: 'auth'
         uses: 'google-github-actions/auth@v1'
