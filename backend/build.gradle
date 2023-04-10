@@ -1,3 +1,14 @@
+buildscript {      // Configuration for building
+    repositories {
+        jcenter()      // Bintray's repository - a fast Maven Central mirror & more
+        mavenCentral()
+    }
+    dependencies {
+        classpath 'com.google.cloud.tools:appengine-gradle-plugin:2.4.3'
+        classpath 'org.akhikhl.gretty:gretty:+'
+    }
+}
+
 plugins {
     id 'java'
     id 'groovy'
@@ -10,6 +21,8 @@ plugins {
 apply plugin: "jacoco"
 apply plugin: 'io.spring.dependency-management'
 apply plugin: 'com.github.johnrengelman.shadow'
+apply plugin: 'org.akhikhl.gretty'
+apply plugin: 'com.google.cloud.tools.appengine'
 
 repositories {
     mavenCentral()
@@ -23,6 +36,9 @@ ext {
 }
 
 dependencies {
+    providedCompile 'javax.servlet:javax.servlet-api:3.1.0'
+    providedCompile 'com.google.appengine:appengine:+'
+
     implementation 'org.springframework.boot:spring-boot-starter-actuator'
     implementation 'org.springframework.boot:spring-boot-starter-web'
     implementation 'commons-validator:commons-validator:1.7'
@@ -84,5 +100,16 @@ jar {
 bootJar {
     manifest {
         attributes 'Main-Class': 'eu.cybershu.pocketstats.PocketStatsApplication'
+    }
+}
+
+//gretty {
+//    servletContainer = 'jetty9'  // What App Engine Flexible uses
+//}
+
+appengine {
+    deploy {   // deploy configuration
+        stopPreviousVersion = true  // default - stop the current version
+        promote = true              // default - & make this the current version
     }
 }

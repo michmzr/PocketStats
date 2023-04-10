@@ -7,18 +7,10 @@
 #   $ gcloud topic gcloudignore
 #
 .gcloudignore
-# If you would like to upload your .git directory, .gitignore file or files
-# from your .gitignore file, remove the corresponding line
-# below:
-.git
-.gitignore
-
-# Target directory for maven builds
-target/
 
 # Ignore everything
 **
 
 # Include only the necessary files
 !./build/libs/backend.jar
-!app.yaml
+!src/main/appengine/app.yaml
