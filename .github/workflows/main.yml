@@ -74,14 +74,14 @@ jobs:
           gradle-version: current
           build-root-directory: backend
           arguments: shadowJar -x test --debug
-      - name: Command Output
+      - name: pwd
         uses: mathiasvr/command-output@v2.0.0 
         with:
            run: pwd
-      - name: Command Output
+      - name: ls
         uses: mathiasvr/command-output@v2.0.0 
         with:
-           run: ls -la ./build/libs
+           run: ls -la
       - id: 'auth'
         uses: 'google-github-actions/auth@v1'
         with:
@@ -97,10 +97,8 @@ jobs:
             POCKET_CONSUMER_KEY=${{secrets.POCKET_CONSUMER_KEY}}
             MONGODB_DB=${{vars.MONGODB_DB}}
             MONGODB_URI=${{secrets.MONGODB_URI}}
-      - name: Test backend deployment
-        run: 'curl "${{ steps.deploy.outputs.url }}"'
       - name: Upload backend JAR artifact
         uses: actions/upload-artifact@v3
         with:
           name: backend.jar
-          path: ./build/libs/backend.jar
+          path: ./backend/build/libs/backend.jar
