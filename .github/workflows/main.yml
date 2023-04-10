@@ -73,7 +73,7 @@ jobs:
         with:
           gradle-version: current
           build-root-directory: backend
-          arguments: shadowJar -x test --debug
+          arguments: jar -x test --debug
       - name: pwd
         uses: mathiasvr/command-output@v2.0.0 
         with:
