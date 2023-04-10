@@ -3,7 +3,6 @@ runtime: java17
 instance_class: F1
 service: backend
 service_account: pocketstats-383108@appspot.gserviceaccount.com
-entrypoint: 'java -jar ./build/libs/backend.jar'
 
 env_variables:
   BUCKET_NAME: "ps-backend"
