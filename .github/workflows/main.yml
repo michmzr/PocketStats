@@ -82,6 +82,10 @@ jobs:
         uses: mathiasvr/command-output@v2.0.0 
         with:
            run: ls -la
+      - name: ls backend build libs
+        uses: mathiasvr/command-output@v2.0.0 
+        with:
+           run: ls -la ./backend/build/libs
       - id: 'auth'
         uses: 'google-github-actions/auth@v1'
         with:
@@ -89,9 +93,10 @@ jobs:
       - name: 'Set up Cloud SDK'
         uses: 'google-github-actions/setup-gcloud@v1'
       - name: 'Deploy backend to App Engine'
-        uses: google-github-actions/deploy-appengine@v1
+        uses: 'google-github-actions/deploy-appengine@v1'
         with:
-          deliverables: ./backend/app.yaml
+          working_directory: ./backend
+          deliverables: ./app.yaml
           flags: "--promote"
           env_vars: |-
             POCKET_CONSUMER_KEY=${{secrets.POCKET_CONSUMER_KEY}}
