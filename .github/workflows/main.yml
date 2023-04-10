@@ -96,7 +96,7 @@ jobs:
         uses: 'google-github-actions/deploy-appengine@v1'
         with:
           working_directory: ./backend
-          deliverables: build.gradle app.yaml
+          deliverables: build.gradle
           flags: "--promote"
           env_vars: |-
             POCKET_CONSUMER_KEY=${{secrets.POCKET_CONSUMER_KEY}}
