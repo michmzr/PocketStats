@@ -96,14 +96,14 @@ jobs:
         uses: 'google-github-actions/deploy-appengine@v1'
         with:
           working_directory: ./backend
-          deliverables: ./app.yaml
+          deliverables: build.gradle app.yaml
           flags: "--promote"
           env_vars: |-
             POCKET_CONSUMER_KEY=${{secrets.POCKET_CONSUMER_KEY}}
             MONGODB_DB=${{vars.MONGODB_DB}}
             MONGODB_URI=${{secrets.MONGODB_URI}}
-      - name: Upload backend JAR artifact
-        uses: actions/upload-artifact@v3
-        with:
-          name: backend.jar
-          path: ./backend/build/libs/backend.jar
+#       - name: Upload backend JAR artifact
+#         uses: actions/upload-artifact@v3
+#         with:
+#           name: backend.jar
+#           path: ./backend/build/libs/backend.jar
