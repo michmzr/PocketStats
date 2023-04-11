@@ -160,3 +160,4 @@ pocket-creds.json
 
 # Frontend
 ./frontend/node_modules!/env_master.json
+/backend/logs/

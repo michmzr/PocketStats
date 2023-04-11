@@ -1,7 +1,8 @@
 #Build stage
 FROM gradle:latest AS BUILD
 WORKDIR ./
-COPY . .
+COPY build.gradle  ./
+COPY src src
 RUN gradle build  --no-daemon
 
 # Package stage
