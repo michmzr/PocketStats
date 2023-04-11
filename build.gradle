@@ -29,9 +29,3 @@ jacocoTestReport {
         html.outputLocation = layout.buildDirectory.dir('jacocoHtml')
     }
 }
-
-jar {
-    manifest {
-        attributes 'Main-Class': 'eu.cybershu.pocketstats.PocketStatsApplication'
-    }
-}

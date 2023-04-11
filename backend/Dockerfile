@@ -2,7 +2,7 @@
 FROM gradle:latest AS BUILD
 WORKDIR ./
 COPY . .
-RUN gradle build
+RUN gradle build  --no-daemon
 
 # Package stage
 FROM openjdk:19
