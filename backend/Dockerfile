@@ -1,3 +1,10 @@
+#Build stage
+FROM gradle:latest AS BUILD
+WORKDIR ./
+COPY . .
+RUN gradle build
+
+# Package stage
 FROM openjdk:19
 VOLUME /tmp
 EXPOSE 8081
