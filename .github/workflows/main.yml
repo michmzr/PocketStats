@@ -17,16 +17,6 @@ jobs:
          distribution: 'temurin'
          java-version: '17'
          check-latest: true
-     - name: Analyze with SonarCloud
-       uses: sonarsource/sonarcloud-github-action@master
-       env:
-           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-       with:
-         args: >
-           -Dsonar.organization=michmzr
-           -Dsonar.projectKey=michmzr_PocketStats
-           -Dsonar.host.url=https://sonarcloud.io
-           -Dsonar.verbose=true
      - name: Cache Gradle packages
        uses: actions/cache@v1
        with:

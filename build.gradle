@@ -116,7 +116,13 @@ task copyFrontendToBuild(type: Copy) {
     into "$buildDir/resources/main/static"
 }
 
+task npmInstall(type: Exec) {
+    workingDir './src/frontend/'
+    commandLine 'npm', 'install'
+}
+
 task npmBuild(type: Exec) {
+    dependsOn 'npmInstall'
     workingDir './src/frontend/'
     commandLine 'npm', 'run', 'build'
 }
