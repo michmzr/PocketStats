@@ -3,41 +3,41 @@ name: PocketStats CI
 on: [push, pull_request]
 
 jobs:
-#   static-analysis:
-#    runs-on: ubuntu-latest
-#    name: "SonarScan analysis"
+  static-analysis:
+    runs-on: ubuntu-latest
+    name: "SonarScan analysis"
 
-#    steps:
-#     - name: Checkout code
-#       uses: actions/checkout@v2
-#     - name: Set up Java
-#       uses: actions/setup-java@v3.9.0
-#       with:
-#         distribution: 'temurin'
-#         java-version: '17'
-#         check-latest: true
-#     - name: Analyze with SonarCloud
-#       uses: sonarsource/sonarcloud-github-action@master
-#       env:
-#           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-#       with:
-#         args: >
-#           -Dsonar.organization=michmzr
-#           -Dsonar.projectKey=michmzr_PocketStats
-#           -Dsonar.host.url=https://sonarcloud.io
-#           -Dsonar.verbose=true
-#     - name: Cache Gradle packages
-#       uses: actions/cache@v1
-#       with:
-#         path: ~/.gradle/caches
-#         key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle') }}
-#         restore-keys: ${{ runner.os }}-gradle
-#     - name: Build and analyze
-#       run: ./gradlew build jacocoTestReport sonar --info   -Dsonar.organization=michmzr  -Dsonar.projectKey=michmzr_PocketStats  -Dsonar.host.url=https://sonarcloud.io  -Dsonar.verbose=true
-#       env:
-#         # SonarCloud access token should be generated from https://sonarcloud.io/account/security/
-#         SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-       
+    steps:
+     - name: Checkout code
+       uses: actions/checkout@v2
+     - name: Set up Java
+       uses: actions/setup-java@v3.9.0
+       with:
+         distribution: 'temurin'
+         java-version: '17'
+         check-latest: true
+     - name: Analyze with SonarCloud
+       uses: sonarsource/sonarcloud-github-action@master
+       env:
+           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+       with:
+         args: >
+           -Dsonar.organization=michmzr
+           -Dsonar.projectKey=michmzr_PocketStats
+           -Dsonar.host.url=https://sonarcloud.io
+           -Dsonar.verbose=true
+     - name: Cache Gradle packages
+       uses: actions/cache@v1
+       with:
+         path: ~/.gradle/caches
+         key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle') }}
+         restore-keys: ${{ runner.os }}-gradle
+     - name: Build and analyze
+       run: ./gradlew build jacocoTestReport sonar --info   -Dsonar.organization=michmzr  -Dsonar.projectKey=michmzr_PocketStats  -Dsonar.host.url=https://sonarcloud.io  -Dsonar.verbose=true
+       env:
+         # SonarCloud access token should be generated from https://sonarcloud.io/account/security/
+         SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+
   tests:
     runs-on: ubuntu-latest
     environment: master
@@ -52,7 +52,6 @@ jobs:
           check-latest: true
 
       - name: Backend tests
-        working-directory: backend
         run: ../gradlew test
   build:
     #    needs:
@@ -72,38 +71,9 @@ jobs:
         uses: gradle/gradle-build-action@v2.4.0
         with:
           gradle-version: current
-          build-root-directory: backend
           arguments: build -x test --debug
-      - name: pwd
-        uses: mathiasvr/command-output@v2.0.0
-        with:
-          run: pwd
-      - name: ls
-        uses: mathiasvr/command-output@v2.0.0
-        with:
-          run: ls -la
-      - name: ls backend build libs
-        uses: mathiasvr/command-output@v2.0.0
-        with:
-          run: ls -la ./backend/build/libs
-      #      - id: 'auth'
-      #        uses: 'google-github-actions/auth@v1'
-      #        with:
-      #          credentials_json: ${{ secrets.GCP_SA_KEY }}
-      #      - name: 'Set up Cloud SDK'
-      #        uses: 'google-github-actions/setup-gcloud@v1'
-      #      - name: 'Deploy backend to App Engine'
-      #        uses: 'google-github-actions/deploy-appengine@v1'
-      #        with:
-      #          working_directory: ./backend
-      #          deliverables: build.gradle
-      #          flags: "--promote"
-      #          env_vars: |-
-      #            POCKET_CONSUMER_KEY=${{secrets.POCKET_CONSUMER_KEY}}
-      #            MONGODB_DB=${{vars.MONGODB_DB}}
-      #            MONGODB_URI=${{secrets.MONGODB_URI}}
       - name: Upload backend JAR artifact
         uses: actions/upload-artifact@v3
         with:
           name: backend.jar
-          path: ./backend/build/libs/backend-2.1.jar
+          path: ./build/libs/app.jar
