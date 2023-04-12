@@ -73,7 +73,7 @@ jobs:
         with:
           gradle-version: current
           build-root-directory: backend
-          arguments: jar -x test --debug
+          arguments: build -x test --debug
       - name: pwd
         uses: mathiasvr/command-output@v2.0.0
         with:
@@ -106,4 +106,4 @@ jobs:
         uses: actions/upload-artifact@v3
         with:
           name: backend.jar
-          path: ./backend/build/libs/backend.jar
+          path: ./backend/build/libs/backend-2.1.jar
