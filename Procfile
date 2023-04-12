@@ -1,1 +1,1 @@
-web: java $JAVA_TOOL_OPTIONS -jar backend/build/backend-2.1.jar --spring.profiles.active=master
+web: java $JAVA_TOOL_OPTIONS -jar build/libs/app.jar --spring.profiles.active=master

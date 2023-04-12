@@ -20,6 +20,7 @@ management:
       exposure:
         include: [ 'configprops', 'mappings', 'health', 'info', 'logfile', 'loggers', 'endpoints' ]
 server:
+  port: 8081
   error:
     include-binding-errors: always
 
@@ -32,5 +33,5 @@ spring:
     mongodb:
       authentication-database: admin
       auto-index-creation: true
+      database: ${MONGODB_DB:db}
       uri: ${MONGODB_URI}
-      database: ${MONGODB_DB}

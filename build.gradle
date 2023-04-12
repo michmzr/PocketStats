@@ -1,7 +1,6 @@
 buildscript {
-    ext {
-    }
     repositories {
+        jcenter()
         mavenCentral()
     }
     dependencies {
@@ -9,17 +8,81 @@ buildscript {
 }
 
 plugins {
+    id 'java'
+    id 'groovy'
+    id 'jacoco'
     id "org.sonarqube" version "3.5.0.2730"
-    id "jacoco"
-    id "java"
+    id 'org.springframework.boot' version '3.0.1'
+    id 'io.spring.dependency-management' version '1.1.0'
+    id 'com.github.johnrengelman.shadow' version '8.1.1'
+    id "com.heroku.sdk.heroku-gradle" version "3.0.0"
 }
 
-apply plugin: "java"
 apply plugin: "jacoco"
+apply plugin: 'io.spring.dependency-management'
+apply plugin: 'com.github.johnrengelman.shadow'
 
-allprojects {
-    group = 'eu.cybershu'
-    version = '2.1'
+repositories {
+    mavenCentral()
+    maven { url 'https://repo.spring.io/milestone' }
+}
+
+ext {
+    mapstructVersion = "1.5.3.Final"
+    lombokVersion = "1.18.20"
+    lombokMapstructBindingVersion = "0.2.0"
+}
+
+dependencies {
+    implementation 'org.springframework.boot:spring-boot-starter-actuator'
+    implementation 'org.springframework.boot:spring-boot-starter-web'
+    implementation 'commons-validator:commons-validator:1.7'
+    developmentOnly 'org.springframework.boot:spring-boot-devtools'
+    implementation 'com.fasterxml.jackson.core:jackson-databind'
+    implementation group: 'com.fasterxml.jackson.dataformat', name: 'jackson-dataformat-xml', version: '2.14.2'
+    implementation group: 'com.fasterxml.jackson.core', name: 'jackson-databind', version: '2.14.2'
+    implementation 'org.springframework.boot:spring-boot-starter-data-mongodb'
+    implementation group: 'javax.validation', name: 'validation-api', version: '2.0.1.Final'
+    implementation 'com.google.code.findbugs:jsr305:3.0.2'
+    implementation 'org.hibernate:hibernate-validator:8.0.0.Final'
+
+    implementation "org.mapstruct:mapstruct:${mapstructVersion}",
+            "org.projectlombok:lombok:${lombokVersion}"
+    annotationProcessor "org.mapstruct:mapstruct-processor:${mapstructVersion}",
+            "org.projectlombok:lombok:${lombokVersion}",
+            "org.projectlombok:lombok-mapstruct-binding:${lombokMapstructBindingVersion}"
+    implementation 'com.google.guava:guava:31.1-jre'
+
+    //	Tests
+    testImplementation('org.springframework.boot:spring-boot-starter-test') {
+        exclude group: 'org.junit.vintage', module: 'junit-vintage-engine'
+    }
+
+    testImplementation 'org.apache.groovy:groovy-all:4.0.10'
+    testImplementation 'org.apache.groovy:groovy-json:4.0.10'
+    testImplementation('org.spockframework:spock-core:2.4-M1-groovy-4.0')
+    testImplementation('org.spockframework:spock-spring:2.4-M1-groovy-4.0')
+    testImplementation 'cglib:cglib-nodep:3.3.0'
+    testImplementation 'net.bytebuddy:byte-buddy-agent:1.14.2'
+
+    testImplementation 'de.flapdoodle.embed:de.flapdoodle.embed.mongo.spring30x:4.6.1'
+
+    testImplementation 'org.testcontainers:testcontainers:1.17.6'
+    testImplementation "org.testcontainers:spock:1.17.6"
+    testImplementation "org.testcontainers:mongodb:1.17.6"
+}
+
+dependencyManagement {
+    imports {
+    }
+}
+
+test {
+    useJUnitPlatform()
+}
+
+tasks.named('test') {
+    useJUnitPlatform()
 }
 
 jacocoTestReport {
@@ -28,4 +91,32 @@ jacocoTestReport {
         csv.required = false
         html.outputLocation = layout.buildDirectory.dir('jacocoHtml')
     }
+}
+
+task stage(dependsOn: ['build', 'clean'])
+build.mustRunAfter clean
+task copyToLib(type: Copy) {
+    into "$buildDir/libs"
+    from(configurations.compile)
+}
+
+stage.dependsOn(copyToLib)
+
+processResources {
+    dependsOn 'copyFrontendToBuild'
+}
+
+bootJar {
+    archiveFileName = "app.jar"
+}
+
+task copyFrontendToBuild(type: Copy) {
+    dependsOn 'npmBuild'
+    from "$projectDir/src/frontend/dist/"
+    into "$buildDir/resources/main/static"
+}
+
+task npmBuild(type: Exec) {
+    workingDir './src/frontend/'
+    commandLine 'npm', 'run', 'build'
 }

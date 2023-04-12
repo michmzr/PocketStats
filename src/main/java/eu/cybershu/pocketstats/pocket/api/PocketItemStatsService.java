@@ -22,7 +22,9 @@ import java.util.*;
 public class PocketItemStatsService {
     private final MongoTemplate mongoTemplate;
 
-    public PocketItemStatsService(MongoTemplate mongoTemplate) {
+    public PocketItemStatsService(
+            MongoTemplate mongoTemplate
+    ) {
         this.mongoTemplate = mongoTemplate;
     }
 
@@ -30,8 +32,8 @@ public class PocketItemStatsService {
         log.info("Calculating {} items status by day from {} to {}", type, start, end);
 
         final Date gteDate = Date.from(start.atStartOfDay()
-                                            .atZone(ZoneId.systemDefault())
-                                            .toInstant());
+                .atZone(ZoneId.systemDefault())
+                .toInstant());
         final Date ltDate = Date.from(end.atTime(23, 59, 59)
                                          .atZone(ZoneId.systemDefault())
                                          .toInstant());

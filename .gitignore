@@ -158,6 +158,11 @@ env_dev.json
 env_master.json
 pocket-creds.json
 
+#Python
+venv
+
 # Frontend
-./frontend/node_modules!/env_master.json
-/backend/logs/
+./src/frontend/node_modules
+
+# Logs
+loga
