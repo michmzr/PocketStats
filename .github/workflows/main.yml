@@ -5,6 +5,7 @@ on: [push, pull_request]
 jobs:
   static-analysis:
     runs-on: ubuntu-latest
+    environment: master
     name: "SonarScan analysis"
 
     steps:
