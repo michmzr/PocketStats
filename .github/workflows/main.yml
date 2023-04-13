@@ -63,3 +63,4 @@ jobs:
           heroku_email: michmzr@gmail.com
           # The appname to use for deploying/updating
           heroku_app_name: getpocket-stats
+          dontuseforce: 1
