@@ -1,4 +1,20 @@
 # PocketStats
+
 App for visualising [GetPocket](https://getpocket.com/) usage stats
 
-**You can read more in article**: [https://cybershu.eu/articles/pocket-stats-analytics-app-get-pocket-api.html](https://cybershu.eu/articles/pocket-stats-analytics-app-get-pocket-api.html)
+## Config
+
+### Backend
+
+#### Environment variabled
+- BACKEND_URL | default: http://localhost:8080
+- POCKET_CONSUMER_KEY
+- MONGODB_HOST
+- MONGODB_PORT
+- MONGODB_USER
+- MONGODB_PASS
+- MONGODB_DB
+- MONGODB_URI
+
+**You can read more in
+article**: [https://cybershu.eu/articles/pocket-stats-analytics-app-get-pocket-api.html](https://cybershu.eu/articles/pocket-stats-analytics-app-get-pocket-api.html)

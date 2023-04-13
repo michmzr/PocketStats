@@ -12,7 +12,7 @@ auth:
       access_token: https://getpocket.com/v3/oauth/authorize
       get: https://getpocket.com/v3/get
     consumer-key: ${POCKET_CONSUMER_KEY}
-    redirect_uri: http://localhost:8080/pocket/auth/token
+    redirect_uri: ${BACKEND_URL:http://localhost:8081}/pocket/auth/token
 
 management:
   endpoints:
@@ -20,6 +20,7 @@ management:
       exposure:
         include: [ 'configprops', 'mappings', 'health', 'info', 'logfile', 'loggers', 'endpoints' ]
 server:
+  port: ${PORT:8081}
   error:
     include-binding-errors: always
 
@@ -30,10 +31,7 @@ spring:
   datasource.driver-class-name: com.mysql.jdbc.Driver
   data:
     mongodb:
-      username: admin
-      password: admin
-      database: db
       authentication-database: admin
       auto-index-creation: true
-      host: localhost
-      port: 27017
+      database: ${MONGODB_DB:db}
+      uri: ${MONGODB_URI}

@@ -155,7 +155,14 @@ gradle-app.setting
 
 #ENV
 env_dev.json
-/pocket-creds.json
+env_master.json
+pocket-creds.json
+
+#Python
+venv
 
 # Frontend
-./frontend/node_modules
+./src/frontend/node_modules
+
+# Logs
+loga

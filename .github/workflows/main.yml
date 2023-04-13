@@ -3,43 +3,9 @@ name: PocketStats CI
 on: [push, pull_request]
 
 jobs:
-#   static-analysis:
-#    runs-on: ubuntu-latest
-#    name: "SonarScan analysis"
-
-#    steps:
-#     - name: Checkout code
-#       uses: actions/checkout@v2
-#     - name: Set up Java
-#       uses: actions/setup-java@v3.9.0
-#       with:
-#         distribution: 'temurin'
-#         java-version: '17'
-#         check-latest: true
-#     - name: Analyze with SonarCloud
-#       uses: sonarsource/sonarcloud-github-action@master
-#       env:
-#           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-#       with:
-#         args: >
-#           -Dsonar.organization=michmzr
-#           -Dsonar.projectKey=michmzr_PocketStats
-#           -Dsonar.host.url=https://sonarcloud.io
-#           -Dsonar.verbose=true
-#     - name: Cache Gradle packages
-#       uses: actions/cache@v1
-#       with:
-#         path: ~/.gradle/caches
-#         key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle') }}
-#         restore-keys: ${{ runner.os }}-gradle
-#     - name: Build and analyze
-#       run: ./gradlew build jacocoTestReport sonar --info   -Dsonar.organization=michmzr  -Dsonar.projectKey=michmzr_PocketStats  -Dsonar.host.url=https://sonarcloud.io  -Dsonar.verbose=true
-#       env:
-#         # SonarCloud access token should be generated from https://sonarcloud.io/account/security/
-#         SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-       
   tests:
     runs-on: ubuntu-latest
+    environment: master
     steps:
       - name: Checkout code
         uses: actions/checkout@v2
@@ -49,15 +15,21 @@ jobs:
           distribution: 'temurin'
           java-version: '17'
           check-latest: true
-  
-      - name: Backend tests
-        working-directory: backend
-        run: ../gradlew test
+      - uses: actions/setup-node@v3
+        with:
+          node-version: 16
+      - name: Build backend and analyse
+        uses: gradle/gradle-build-action@v2.4.0
+        with:
+          gradle-version: current
+          arguments: build jacocoTestReport sonar --info -Dsonar.organization=michmzr  -Dsonar.projectKey=michmzr_PocketStats  -Dsonar.host.url=https://sonarcloud.io  -Dsonar.verbose=true
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
   build:
-    needs: 
-      - tests
+    #    needs:
+    #      - tests
     runs-on: ubuntu-latest
-
+    environment: master
     steps:
       - name: Checkout code
         uses: actions/checkout@v2
@@ -66,10 +38,32 @@ jobs:
         with:
           distribution: 'temurin'
           java-version: '17'
-          check-latest: true
+          check-latest: false
+      - uses: actions/setup-node@v3
+        with:
+          node-version: 16
       - name: Build backend
-        working-directory: backend
-        run: ../gradlew build
-      - name: Build frontend
-        working-directory: frontend
-        run: npm install && npm run build
+        uses: gradle/gradle-build-action@v2.4.0
+        with:
+          gradle-version: current
+          arguments: build -x test
+      - name: Upload backend JAR artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: app.jar
+          path: ./build/libs/app.jar
+#      - name: Deploy to Heroku
+#        # You may pin to the exact commit or the version.
+#        # uses: AkhileshNS/heroku-deploy@5ef17ff17a3fb8e9ad822ae6a61648a3ef9e0c3d
+#        uses: AkhileshNS/heroku-deploy@v3.12.13
+#        with:
+#          heroku_api_key: ${{ secrets.HEROKU_API_KEY }}
+#          heroku_email: michmzr@gmail.com
+#          heroku_app_name: getpocket-stats
+#          dontuseforce: 0
+#          remote_branch: "main"
+#        env:
+#          HD_MONGODB_DB: test
+#          HD_MONGODB_URI: ${{ secrets.MONGODB_URI }}
+#          HD_POCKET_CONSUMER_KEY: ${{ secrets.POCKET_CONSUMER_KEY }}
+#          HD_BACKEND_URL: https://getpocket-stats.herokuapp.com
