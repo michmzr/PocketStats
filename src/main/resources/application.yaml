@@ -20,7 +20,7 @@ management:
       exposure:
         include: [ 'configprops', 'mappings', 'health', 'info', 'logfile', 'loggers', 'endpoints' ]
 server:
-  port: 8081
+  port: ${PORT:81}
   error:
     include-binding-errors: always
 

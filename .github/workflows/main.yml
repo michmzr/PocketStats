@@ -66,5 +66,5 @@ jobs:
       - name: Upload backend JAR artifact
         uses: actions/upload-artifact@v3
         with:
-          name: backend.jar
+          name: app.jar
           path: ./build/libs/app.jar
