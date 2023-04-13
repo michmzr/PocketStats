@@ -108,19 +108,19 @@ bootJar {
     archiveFileName = "app.jar"
 }
 
-task copyFrontendToBuild(type: Copy) {
-    dependsOn 'npmBuild'
-    from "$projectDir/src/frontend/dist/"
-    into "$buildDir/resources/main/static"
-}
-
 task npmInstall(type: Exec) {
     workingDir './src/frontend/'
     commandLine 'npm', 'install'
 }
 
-task npmBuild(type: Exec) {
+task vueBuild(type: Exec) {
     dependsOn 'npmInstall'
     workingDir './src/frontend/'
-    commandLine 'npm', 'run', 'build'
+    commandLine 'npm', 'exec', 'vue-cli-service', 'build'
+}
+
+task copyFrontendToBuild(type: Copy) {
+    dependsOn 'vueBuild'
+    from "$projectDir/src/frontend/dist/"
+    into "$buildDir/resources/main/static"
 }

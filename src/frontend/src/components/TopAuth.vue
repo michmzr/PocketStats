@@ -1,7 +1,7 @@
 <template>
-  <form class="form-inline my-2 my-lg-0">
-    <div v-if="!authorized && waitingForLogin === false">
-      <a v-if="loginUrl" v-bind:href="loginUrl" target="_blank" v-on:click="loginStarted">
+  <form class="form-inline my-2 my-lg-0" >
+    <div v-if="!authorized && waitingForLogin === false" :key="authorized">
+      <a v-if="showLoginButton" v-bind:href="loginUrl" target="_blank" v-on:click="loginStarted">
         <button class="btn btn-outline-primary my-2 my-sm-0" type="submit">Log to pocket</button>
       </a>
     </div>
@@ -22,12 +22,14 @@
 import {Vue} from "vue-class-component";
 import {useSessionStore} from "@/store";
 import {AuthorizationService} from "@/services/authorization-service";
-
 export default class TopAuth extends Vue {
-  waitingForLogin: Boolean = false;
-  authorized: Boolean = false;
-  loginUrl?: String;
-  sessionStore = useSessionStore();
+  waitingForLogin: Boolean = false
+  authorized: Boolean = false
+
+  showLoginButton:Boolean = false
+  loginUrl: String = ""
+
+  sessionStore = useSessionStore()
 
   isAuthorized() {
     this.authorized = this.sessionStore.isAuthorized;
@@ -35,36 +37,41 @@ export default class TopAuth extends Vue {
   }
 
   onAuthorizationStatusChanged() {
-    if (!this.authorized && this.loginUrl == undefined) {
-      let authService = new AuthorizationService();
+    if (!this.showLoginButton) {
+      let authService = new AuthorizationService()
 
-      let self = this;
+      let self = this
       authService.getLoginUrl().then((response) => {
-        self.loginUrl = response.data.data.link;
+        console.debug("got login url" +   response.data.data.link)
+        self.loginUrl = response.data.data.link
+        self.showLoginButton = true
       });
     }
   }
 
   loginStarted() {
-    this.waitingForLogin = true;
-    let authService = new AuthorizationService();
+    this.waitingForLogin = true
+    let authService = new AuthorizationService()
 
+    let self = this
     authService.waitForAuthorization().then((value) => {
-      this.waitingForLogin = false;
-      this.authorized = value;
+      self.waitingForLogin = false
+      self.authorized = value
     });
   }
 
   mounted() {
-    this.authorized = false;
-    this.loginUrl = undefined;
-    this.waitingForLogin = false;
+    this.authorized = false
+    this.waitingForLogin = false
 
-    this.isAuthorized();
+    this.isAuthorized()
+
+    let self = this
     this.sessionStore.$subscribe((mutation, state) => {
-      this.authorized = state.authorized;
-      this.onAuthorizationStatusChanged();
-    });
+      console.info("store auth status")
+      self.authorized = state.authorized
+      self.onAuthorizationStatusChanged()
+    })
   }
 }
 </script>

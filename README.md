@@ -7,7 +7,7 @@ App for visualising [GetPocket](https://getpocket.com/) usage stats
 ### Backend
 
 #### Environment variabled
-
+- BACKEND_URL | default: http://localhost:8080
 - POCKET_CONSUMER_KEY
 - MONGODB_HOST
 - MONGODB_PORT

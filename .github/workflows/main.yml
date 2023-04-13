@@ -22,7 +22,7 @@ jobs:
         uses: gradle/gradle-build-action@v2.4.0
         with:
           gradle-version: current
-          arguments: build jacocoTestReport sonar --info   -Dsonar.organization=michmzr  -Dsonar.projectKey=michmzr_PocketStats  -Dsonar.host.url=https://sonarcloud.io  -Dsonar.verbose=true
+          arguments: build jacocoTestReport sonar --info -Dsonar.organization=michmzr  -Dsonar.projectKey=michmzr_PocketStats  -Dsonar.host.url=https://sonarcloud.io  -Dsonar.verbose=true
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
   build:
@@ -66,3 +66,4 @@ jobs:
           HD_MONGODB_DB: test
           HD_MONGODB_URI: ${{ secrets.MONGODB_URI }}
           HD_POCKET_CONSUMER_KEY: ${{ secrets.POCKET_CONSUMER_KEY }}
+          HD_BACKEND_URL: https://getpocket-stats.herokuapp.com
