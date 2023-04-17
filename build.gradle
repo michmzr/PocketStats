@@ -45,6 +45,8 @@ dependencies {
     implementation group: 'javax.validation', name: 'validation-api', version: '2.0.1.Final'
     implementation 'com.google.code.findbugs:jsr305:3.0.2'
     implementation 'org.hibernate:hibernate-validator:8.0.0.Final'
+    implementation 'org.springframework.boot:spring-boot-starter-cache:3.0.5'
+    implementation 'org.springframework:spring-context-support:6.0.8'
 
     implementation "org.mapstruct:mapstruct:${mapstructVersion}",
             "org.projectlombok:lombok:${lombokVersion}"

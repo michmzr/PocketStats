@@ -43,11 +43,6 @@ public class SyncController {
     public ApiResponse<SyncStatus> lastFromLastSync() throws IOException, InterruptedException {
         log.debug("importing from last sync...");
 
-        Integer records = pocketApiService.importFromSinceLastUpdate();
-
-        return new ApiResponse<>(0, "ok", new SyncStatus(
-                Instant.now(),
-                records
-        ));
+        return new ApiResponse<>(0, "ok", pocketApiService.importFromSinceLastUpdate());
     }
 }
