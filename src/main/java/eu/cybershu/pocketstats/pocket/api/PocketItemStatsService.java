@@ -2,12 +2,16 @@ package eu.cybershu.pocketstats.pocket.api;
 
 import com.mongodb.client.AggregateIterable;
 import com.mongodb.client.MongoCollection;
+import eu.cybershu.pocketstats.events.UserSynchronizedItemsEvent;
 import eu.cybershu.pocketstats.stats.DayStat;
 import eu.cybershu.pocketstats.stats.DayStatsRecords;
 import eu.cybershu.pocketstats.stats.DayStatsType;
 import eu.cybershu.pocketstats.stats.TopTag;
 import lombok.extern.slf4j.Slf4j;
 import org.bson.Document;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
+import org.springframework.context.event.EventListener;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
@@ -28,6 +32,7 @@ public class PocketItemStatsService {
         this.mongoTemplate = mongoTemplate;
     }
 
+    @Cacheable("stats-day-records")
     public DayStatsRecords getDayStatsRecords(LocalDate start, LocalDate end, DayStatsType type) {
         log.info("Calculating {} items status by day from {} to {}", type, start, end);
 
@@ -77,6 +82,7 @@ public class PocketItemStatsService {
         };
     }
 
+    @Cacheable("stats-top-tags")
     public List<TopTag> getTopTags(Integer number) {
         log.info("Calculating top {} tags", number);
 
@@ -110,6 +116,7 @@ public class PocketItemStatsService {
         return mongoTemplate.getCollection("pocketItem");
     }
 
+    @Cacheable("stats-lang-stats")
     public Map<String, Long> getLangStats() {
         log.info("Calculating lang stats");
 
@@ -136,5 +143,11 @@ public class PocketItemStatsService {
         }
 
         return langStats;
+    }
+
+    @EventListener
+    @CacheEvict(value = {"stats-day-records", "stats-top-tags", "stats-lang-stats"}, allEntries = true)
+    public void handleUserRemovedEvent(UserSynchronizedItemsEvent event) {
+        log.info("User synchronized items with GetPocket: {}", event.getSyncStatus());
     }
 }

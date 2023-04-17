@@ -3,9 +3,11 @@ package eu.cybershu.pocketstats.pocket;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import eu.cybershu.pocketstats.db.*;
+import eu.cybershu.pocketstats.events.EventsPublisher;
 import eu.cybershu.pocketstats.pocket.api.ApiXHeaders;
 import eu.cybershu.pocketstats.pocket.api.ListItem;
 import eu.cybershu.pocketstats.pocket.api.PocketGetResponse;
+import eu.cybershu.pocketstats.sync.SyncStatus;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
@@ -29,6 +31,9 @@ public class PocketApiService {
     private final MigrationStatusRepository migrationStatusRepository;
     private final PocketAuthorizationService authorizationService;
     private final PocketItemMapper pocketItemMapper;
+
+    private final EventsPublisher eventsPublisher;
+
     @Value("${auth.pocket.consumer-key}")
     private String pocketConsumerKey;
     @Value("${auth.pocket.url.get}")
@@ -36,9 +41,10 @@ public class PocketApiService {
 
     public PocketApiService(PocketItemRepository pocketItemRepository,
                             MigrationStatusRepository migrationStatusRepository,
-                            PocketAuthorizationService authorizationService) {
+                            PocketAuthorizationService authorizationService, EventsPublisher eventsPublisher) {
         this.migrationStatusRepository = migrationStatusRepository;
         this.authorizationService = authorizationService;
+        this.eventsPublisher = eventsPublisher;
         this.client = HttpClient
                 .newBuilder()
                 .followRedirects(HttpClient.Redirect.NORMAL)
@@ -49,17 +55,26 @@ public class PocketApiService {
         this.pocketItemRepository = pocketItemRepository;
     }
 
-    public Integer importFromSinceLastUpdate() throws IOException, InterruptedException {
+    public SyncStatus importFromSinceLastUpdate() throws IOException, InterruptedException {
         MigrationStatus status = lastMigration();
 
         log.debug("import from last - status={}", status);
 
+        int items;
         if (status == null) {
             log.warn("No import was done. Importing all items");
-            return importAll();
+            items =  importAll();
         } else {
-            return importAllToDbSince(status.date());
+            items = importAllToDbSince(status.date());
         }
+
+        SyncStatus syncStatus = new SyncStatus(
+                Instant.now(),
+                items
+        );
+        eventsPublisher.sendUserSynchronizedItems(syncStatus);
+
+        return syncStatus;
     }
 
     public MigrationStatus lastMigration() {
