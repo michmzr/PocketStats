@@ -7,6 +7,8 @@ import eu.cybershu.pocketstats.stats.DayStat;
 import eu.cybershu.pocketstats.stats.DayStatsRecords;
 import eu.cybershu.pocketstats.stats.DayStatsType;
 import eu.cybershu.pocketstats.stats.TopTag;
+import eu.cybershu.pocketstats.utils.TimePeriod;
+import eu.cybershu.pocketstats.utils.TimeUtils;
 import lombok.extern.slf4j.Slf4j;
 import org.bson.Document;
 import org.springframework.cache.annotation.CacheEvict;
@@ -16,6 +18,8 @@ import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 
+import java.time.Clock;
+import java.time.Instant;
 import java.time.LocalDate;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
@@ -25,10 +29,12 @@ import java.util.*;
 @Service
 public class PocketItemStatsService {
     private final MongoTemplate mongoTemplate;
+    private final Clock clock;
 
     public PocketItemStatsService(
             MongoTemplate mongoTemplate
     ) {
+        this.clock = Clock.systemUTC();
         this.mongoTemplate = mongoTemplate;
     }
 
@@ -40,15 +46,15 @@ public class PocketItemStatsService {
                 .atZone(ZoneId.systemDefault())
                 .toInstant());
         final Date ltDate = Date.from(end.atTime(23, 59, 59)
-                                         .atZone(ZoneId.systemDefault())
-                                         .toInstant());
+                .atZone(ZoneId.systemDefault())
+                .toInstant());
 
         String timeFieldName = getTimeFieldForAggregation(type);
 
         var collection = getPocketItemsCollection();
         AggregateIterable<Document> resultsIter = collection.aggregate(Arrays.asList(new Document("$match",
                         new Document("status", type.toItemStatus()
-                                                   .name())
+                                .name())
                                 .append(timeFieldName,
                                         new Document("$gte", gteDate).append("$lte", ltDate))),
                 new Document("$group",
@@ -112,6 +118,115 @@ public class PocketItemStatsService {
         return topTags;
     }
 
+    @Cacheable("stats-periods-aggregated")
+    public ItemsStatsAggregated itemsStatsAggregated() {
+        log.info("Aggregating stats per period....");
+
+        List<ItemsStatsPerPeriod> periods = new LinkedList<>();
+
+        //current week
+        TimePeriod currWeek = TimePeriod.currentWeek(clock());
+        periods.add(
+                new ItemsStatsPerPeriod("current-week",
+                        "Current week", itemsStatsPeriod(currWeek), currWeek)
+        );
+
+        //last week
+        TimePeriod lastWeek = TimePeriod.previousWeek(clock());
+        periods.add(
+                new ItemsStatsPerPeriod("last-week",
+                        "Last week", itemsStatsPeriod(lastWeek), lastWeek)
+        );
+
+        //current month
+        TimePeriod currentMonth = TimePeriod.currentMonth(clock());
+        periods.add(
+                new ItemsStatsPerPeriod("current-month",
+                        "Current month", itemsStatsPeriod(currentMonth), currentMonth)
+        );
+
+        //last  month
+        TimePeriod lastMonth = TimePeriod.lastMonth(clock());
+        periods.add(
+                new ItemsStatsPerPeriod("last-month",
+                        "last month", itemsStatsPeriod(lastMonth), lastMonth)
+        );
+
+        //current year
+        TimePeriod currentYear = TimePeriod.currentYear(clock());
+        periods.add(
+                new ItemsStatsPerPeriod("current-year",
+                        "Current year", itemsStatsPeriod(currentYear), currentYear)
+        );
+
+        //last year
+        TimePeriod lastYear = TimePeriod.lastYear(clock());
+        periods.add(
+                new ItemsStatsPerPeriod("last-year",
+                        "Last year", itemsStatsPeriod(lastYear), lastYear)
+        );
+
+        //total
+        periods.add(
+                new ItemsStatsPerPeriod("total",
+                        "Total", itemsStatsTotal(), null)
+        );
+
+        log.debug("Stats: {}", periods);
+
+        return new ItemsStatsAggregated(periods);
+    }
+
+    public PeriodItemsStats itemsStatsPeriod(TimePeriod timePeriod) {
+        log.info("Calculating items stats for period: {}", timePeriod);
+        Instant begin = TimeUtils.toStartDayInstant(timePeriod.begin());
+        Instant end = TimeUtils.toEndOfDayInstant(timePeriod.end());
+
+        var collection = getPocketItemsCollection();
+        AggregateIterable<Document> result = collection.aggregate(Arrays.asList(new Document("$match",
+                        new Document("$or", Arrays.asList(new Document("timeAdded",
+                                        new Document("$gte", begin).append("$lte", end)),
+                                new Document("timeUpdated",
+                                        new Document("$gte", begin).append("$lte", end))))),
+                new Document("$group",
+                        new Document("_id", "$status")
+                                .append("count",
+                                        new Document("$sum", 1L)))));
+
+        Map<ItemStatus, Long> itemStats = new HashMap<>();
+        for (Document docs : result) {
+            String name = docs.getString("_id");
+            long count = docs.getLong("count");
+            itemStats.put(ItemStatus.valueOf(name), count);
+        }
+
+        return new PeriodItemsStats(
+                itemStats.get(ItemStatus.TO_READ) + itemStats.get(ItemStatus.ARCHIVED),
+                itemStats.get(ItemStatus.ARCHIVED));
+    }
+
+
+    public PeriodItemsStats itemsStatsTotal() {
+        log.info("Counting items per status for whole dataset...");
+
+        var collection = getPocketItemsCollection();
+        AggregateIterable<Document> result = collection.aggregate(List.of(new Document("$group",
+                new Document("_id", "$status")
+                        .append("count",
+                                new Document("$sum", 1L)))));
+
+        Map<ItemStatus, Long> itemStats = new HashMap<>();
+        for (Document docs : result) {
+            String name = docs.getString("_id");
+            long count = docs.getLong("count");
+            itemStats.put(ItemStatus.valueOf(name), count);
+        }
+
+        return new PeriodItemsStats(
+                itemStats.get(ItemStatus.TO_READ) + itemStats.get(ItemStatus.ARCHIVED),
+                itemStats.get(ItemStatus.ARCHIVED));
+    }
+
     private MongoCollection<Document> getPocketItemsCollection() {
         return mongoTemplate.getCollection("pocketItem");
     }
@@ -146,8 +261,12 @@ public class PocketItemStatsService {
     }
 
     @EventListener
-    @CacheEvict(value = {"stats-day-records", "stats-top-tags", "stats-lang-stats"}, allEntries = true)
+    @CacheEvict(value = {"stats-day-records", "stats-top-tags", "stats-lang-stats", "stats-periods-aggregated"}, allEntries = true)
     public void handleUserRemovedEvent(UserSynchronizedItemsEvent event) {
         log.info("User synchronized items with GetPocket: {}", event.getSyncStatus());
+    }
+
+    private Clock clock() {
+        return this.clock;
     }
 }

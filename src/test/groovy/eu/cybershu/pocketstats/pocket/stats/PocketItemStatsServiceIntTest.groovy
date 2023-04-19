@@ -166,6 +166,8 @@ class PocketItemStatsServiceIntTest extends BaseTest {
         result.pt == 1
     }
 
+    //todo period stats
+
     private void assertNumberInDay(DayStatsRecords dayStatsRecords, LocalDate date, Integer expected) {
         def found = dayStatsRecords.stats().findAll { it -> it.day() == date }
         assert found.size() == 1, "Found more than 1 record for day ${date}. It can be only one!"

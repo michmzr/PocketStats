@@ -2,7 +2,7 @@ import {ConfigsService} from "@/services/configs-service";
 import axios from "axios";
 import {format} from "date-fns";
 import {TimePeriod} from "@/models/time-models";
-import {DayStatsType, ILangStats, ITopTags,} from "@/models/stats-models";
+import {DayStatsType, ILangStats, ItemsStatsAggregated, ITopTags,} from "@/models/stats-models";
 
 export class StatsService {
     configsService = new ConfigsService();
@@ -31,6 +31,14 @@ export class StatsService {
             .get(`${this.configsService.backendUrl()}/stats/langs`)
             .then((response) => {
                 return response.data.data as ILangStats
+            });
+    }
+
+    getPeriodStats() {
+        return axios
+            .get(`${this.configsService.backendUrl()}/stats/byPeriods`)
+            .then((response) => {
+                return response.data.data as ItemsStatsAggregated
             });
     }
 }
