@@ -10,6 +10,7 @@ import eu.cybershu.pocketstats.stats.TopTag;
 import eu.cybershu.pocketstats.utils.TimePeriod;
 import eu.cybershu.pocketstats.utils.TimeUtils;
 import lombok.extern.slf4j.Slf4j;
+import org.bson.BsonNull;
 import org.bson.Document;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
@@ -182,27 +183,44 @@ public class PocketItemStatsService {
         Instant begin = TimeUtils.toStartDayInstant(timePeriod.begin());
         Instant end = TimeUtils.toEndOfDayInstant(timePeriod.end());
 
+        //todo tylko dodać te zarchiwizowane tego samego dnia
+
         var collection = getPocketItemsCollection();
         AggregateIterable<Document> result = collection.aggregate(Arrays.asList(new Document("$match",
                         new Document("$or", Arrays.asList(new Document("timeAdded",
-                                        new Document("$gte", begin).append("$lte", end)),
-                                new Document("timeUpdated",
-                                        new Document("$gte", begin).append("$lte", end))))),
+                                        new Document("$gte",
+                                                begin)
+                                                .append("$lte",
+                                                        end)),
+                                new Document("timeRead",
+                                        new Document("$gte",
+                                                begin)
+                                                .append("$lte",
+                                                        end))))),
                 new Document("$group",
-                        new Document("_id", "$status")
-                                .append("count",
-                                        new Document("$sum", 1L)))));
+                        new Document("_id",
+                                new BsonNull())
+                                .append("added",
+                                        new Document("$sum",
+                                                new Document("$cond", Arrays.asList(new Document("$and", Arrays.asList(new Document("$gte", Arrays.asList("$timeAdded",
+                                                                begin)),
+                                                        new Document("$lte", Arrays.asList("$timeAdded",
+                                                                end)))), 1L, 0L))))
+                                .append("archived",
+                                        new Document("$sum",
+                                                new Document("$cond", Arrays.asList(new Document("$and", Arrays.asList(new Document("$gte", Arrays.asList("$timeRead",
+                                                                begin)),
+                                                        new Document("$lte", Arrays.asList("$timeRead",
+                                                                end)))), 1L, 0L))))),
+                new Document("$project",
+                        new Document("_id", 0L)
+                                .append("added", 1L)
+                                .append("archived", 1L))));
 
-        Map<ItemStatus, Long> itemStats = new HashMap<>();
-        for (Document docs : result) {
-            String name = docs.getString("_id");
-            long count = docs.getLong("count");
-            itemStats.put(ItemStatus.valueOf(name), count);
-        }
-
+        Document docs = result.first();
         return new PeriodItemsStats(
-                itemStats.get(ItemStatus.TO_READ) + itemStats.get(ItemStatus.ARCHIVED),
-                itemStats.get(ItemStatus.ARCHIVED));
+                docs.getLong("added"), docs.getLong("archived")
+        );
     }
 
 
