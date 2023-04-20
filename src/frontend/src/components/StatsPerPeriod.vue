@@ -62,11 +62,7 @@ export default class StatsPerPeriod extends Vue {
   }
 
   displayPeriod(period: TimePeriod): String {
-    const begin = new Date(Date.parse(period.begin));
-    const end = new Date(Date.parse(period.end));
-
-    const pretty = format(parseISO(period.begin.toString()), "dd-MM-yyyy") + " - " + format(parseISO(period.end.toString()), "dd-MM-yyyy");
-    return pretty
+    return format(parseISO(period.begin.toString()), "dd-MM-yyyy") + " - " + format(parseISO(period.end.toString()), "dd-MM-yyyy");
   }
 
   loadStats() {
