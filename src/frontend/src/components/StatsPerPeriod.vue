@@ -3,12 +3,28 @@
     <div v-if="loadedData" class="card-body">
       <h5 class="card-title">Stats per time period</h5>
 
-      <div v-for="periodStats in   itemsStats" v-bind:key="periodStats.nameShort">
-        <span>{{ periodStats.nameDesc }}</span> | <span
-          v-if="periodStats.period">{{ displayPeriod(periodStats.period) }}</span><br/>
-        <span>➕{{ periodStats.stats.added }} ✔️{{ periodStats.stats.read }}</span>
-        <hr/>
-      </div>
+      <table class="table table-hover">
+        <thead>
+        <tr>
+          <th>📅 Period</th>
+          <th>🗓️ Date Range</th>
+          <th>🆕 Added</th>
+          <th>✅ Read</th>
+        </tr>
+        </thead>
+        <tbody>
+
+        <tr v-for="periodStats in  itemsStats" v-bind:key="periodStats.nameShort">
+          <td>{{ periodStats.nameDesc }}</td>
+          <td>
+               <span
+                   v-if="periodStats.period">{{ displayPeriod(periodStats.period) }}</span>
+          </td>
+          <td>{{ periodStats.stats.added }}</td>
+          <td>{{ periodStats.stats.read }}</td>
+        </tr>
+        </tbody>
+      </table>
     </div>
   </div>
 </template>

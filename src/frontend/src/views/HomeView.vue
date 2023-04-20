@@ -12,10 +12,10 @@
   </div>
 
   <div class="row mt-2">
-    <div class="col-6">
+    <div class="col-md-6 col-12 col-lg-4 block">
       <TopTags></TopTags>
     </div>
-    <div class="col-6">
+    <div class="col-md-6 col-12 col-lg-8 block">
       <StatsPerPeriod></StatsPerPeriod>
     </div>
   </div>

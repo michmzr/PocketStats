@@ -25,6 +25,8 @@ import java.time.LocalDate;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutionException;
 
 @Slf4j
 @Service
@@ -127,53 +129,58 @@ public class PocketItemStatsService {
 
         //current week
         TimePeriod currWeek = TimePeriod.currentWeek(clock());
-        periods.add(
+        CompletableFuture<ItemsStatsPerPeriod> currWeekFuture = CompletableFuture.supplyAsync(() ->
                 new ItemsStatsPerPeriod("current-week",
-                        "Current week", itemsStatsPeriod(currWeek), currWeek)
-        );
+                        "Current week", itemsStatsPeriod(currWeek), currWeek));
 
         //last week
         TimePeriod lastWeek = TimePeriod.previousWeek(clock());
-        periods.add(
+        CompletableFuture<ItemsStatsPerPeriod> lastWeekFuture = CompletableFuture.supplyAsync(() ->
                 new ItemsStatsPerPeriod("last-week",
-                        "Last week", itemsStatsPeriod(lastWeek), lastWeek)
-        );
+                        "Last week", itemsStatsPeriod(lastWeek), lastWeek));
 
         //current month
         TimePeriod currentMonth = TimePeriod.currentMonth(clock());
-        periods.add(
+        CompletableFuture<ItemsStatsPerPeriod> currentMonthFuture = CompletableFuture.supplyAsync(() ->
                 new ItemsStatsPerPeriod("current-month",
-                        "Current month", itemsStatsPeriod(currentMonth), currentMonth)
-        );
+                        "Current month", itemsStatsPeriod(currentMonth), currentMonth));
 
         //last  month
         TimePeriod lastMonth = TimePeriod.lastMonth(clock());
-        periods.add(
+        CompletableFuture<ItemsStatsPerPeriod> lastMonthFuture = CompletableFuture.supplyAsync(() ->
                 new ItemsStatsPerPeriod("last-month",
-                        "last month", itemsStatsPeriod(lastMonth), lastMonth)
-        );
+                        "last month", itemsStatsPeriod(lastMonth), lastMonth));
 
         //current year
         TimePeriod currentYear = TimePeriod.currentYear(clock());
-        periods.add(
+        CompletableFuture<ItemsStatsPerPeriod> currentYearFuture = CompletableFuture.supplyAsync(() ->
                 new ItemsStatsPerPeriod("current-year",
-                        "Current year", itemsStatsPeriod(currentYear), currentYear)
-        );
+                        "Current year", itemsStatsPeriod(currentYear), currentYear));
 
         //last year
         TimePeriod lastYear = TimePeriod.lastYear(clock());
-        periods.add(
+        CompletableFuture<ItemsStatsPerPeriod> lastYearFuture = CompletableFuture.supplyAsync(() ->
                 new ItemsStatsPerPeriod("last-year",
-                        "Last year", itemsStatsPeriod(lastYear), lastYear)
-        );
+                        "Last year", itemsStatsPeriod(lastYear), lastYear));
 
         //total
-        periods.add(
+        CompletableFuture<ItemsStatsPerPeriod> totalFuture = CompletableFuture.supplyAsync(() ->
                 new ItemsStatsPerPeriod("total",
-                        "Total", itemsStatsTotal(), null)
-        );
+                        "Total", itemsStatsTotal(), null));
 
-        log.debug("Stats: {}", periods);
+        CompletableFuture.allOf(currWeekFuture, lastWeekFuture, currentMonthFuture, lastMonthFuture, currentYearFuture, lastYearFuture, totalFuture).join();
+
+        try {
+            periods.add(currWeekFuture.get());
+            periods.add(lastWeekFuture.get());
+            periods.add(currentMonthFuture.get());
+            periods.add(lastMonthFuture.get());
+            periods.add(currentYearFuture.get());
+            periods.add(lastYearFuture.get());
+            periods.add(totalFuture.get());
+        } catch (InterruptedException | ExecutionException e) {
+            log.error("Error getting parallelized results", e);
+        }
 
         return new ItemsStatsAggregated(periods);
     }
@@ -182,8 +189,6 @@ public class PocketItemStatsService {
         log.info("Calculating items stats for period: {}", timePeriod);
         Instant begin = TimeUtils.toStartDayInstant(timePeriod.begin());
         Instant end = TimeUtils.toEndOfDayInstant(timePeriod.end());
-
-        //todo tylko dodać te zarchiwizowane tego samego dnia
 
         var collection = getPocketItemsCollection();
         AggregateIterable<Document> result = collection.aggregate(Arrays.asList(new Document("$match",
@@ -218,11 +223,12 @@ public class PocketItemStatsService {
                                 .append("archived", 1L))));
 
         Document docs = result.first();
+        Objects.requireNonNull(docs);
+
         return new PeriodItemsStats(
                 docs.getLong("added"), docs.getLong("archived")
         );
     }
-
 
     public PeriodItemsStats itemsStatsTotal() {
         log.info("Counting items per status for whole dataset...");
