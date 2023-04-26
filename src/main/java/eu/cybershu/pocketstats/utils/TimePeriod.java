@@ -39,7 +39,7 @@ public record TimePeriod(LocalDate begin, LocalDate end) {
         if (clock == null) {
             return LocalDate.now(Clock.systemUTC());
         } else {
-            return LocalDate.now();
+            return LocalDate.now(clock);
         }
     }
 
