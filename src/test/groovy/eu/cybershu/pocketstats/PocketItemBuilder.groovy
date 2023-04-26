@@ -3,7 +3,7 @@ package eu.cybershu.pocketstats
 import eu.cybershu.pocketstats.db.PocketItem
 import eu.cybershu.pocketstats.pocket.api.ItemStatus
 
-import java.time.Instant;
+import java.time.Instant
 
 class PocketItemBuilder {
     static PocketItem todo(Instant timeAdded = Instant.now(),
@@ -27,6 +27,7 @@ class PocketItemBuilder {
         item.status(ItemStatus.ARCHIVED)
         item.timeAdded(timeAdded)
         item.timeRead(timeRead)
+        item.timeUpdated(timeRead)
         item.id(UUID.randomUUID().toString())
         item.url(url)
         item.title(title)

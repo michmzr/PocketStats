@@ -26,3 +26,23 @@ export interface ITopTags {
 export interface ILangStats {
     langCount: Map<string, number>
 }
+
+export type ItemsStatsAggregated = {
+    itemsStats: ItemsStatsPerPeriod[];
+};
+
+export type ItemsStatsPerPeriod = {
+    nameShort: string;
+    nameDesc: string;
+    stats: PeriodItemsStats;
+    period: TimePeriod;
+};
+
+export type PeriodItemsStats = {
+    added: number, read: number
+};
+
+export type TimePeriod = {
+    begin: string //ISO standard
+    end: string //ISO standard
+}

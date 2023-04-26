@@ -6,7 +6,7 @@
         <thead>
         <tr>
           <th scope="col">Tag name</th>
-          <th scope="col">Occurrences</th>
+          <th scope="col">Occurs</th>
         </tr>
         </thead>
         <tbody>
