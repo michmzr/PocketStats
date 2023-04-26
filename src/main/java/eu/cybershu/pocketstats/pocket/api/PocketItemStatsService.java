@@ -125,8 +125,6 @@ public class PocketItemStatsService {
     public ItemsStatsAggregated itemsStatsAggregated() {
         log.info("Aggregating stats per period....");
 
-        List<ItemsStatsPerPeriod> periods = new LinkedList<>();
-
         //current week
         TimePeriod currWeek = TimePeriod.currentWeek(clock());
         CompletableFuture<ItemsStatsPerPeriod> currWeekFuture = CompletableFuture.supplyAsync(() ->
@@ -168,21 +166,23 @@ public class PocketItemStatsService {
                 new ItemsStatsPerPeriod("total",
                         "Total", itemsStatsTotal(), null));
 
-        CompletableFuture.allOf(currWeekFuture, lastWeekFuture, currentMonthFuture, lastMonthFuture, currentYearFuture, lastYearFuture, totalFuture).join();
+        CompletableFuture.allOf(currWeekFuture, lastWeekFuture, currentMonthFuture,
+                lastMonthFuture, currentYearFuture, lastYearFuture, totalFuture).join();
 
+        final ItemsStatsAggregated itemsStatsAggregated = new ItemsStatsAggregated();
         try {
-            periods.add(currWeekFuture.get());
-            periods.add(lastWeekFuture.get());
-            periods.add(currentMonthFuture.get());
-            periods.add(lastMonthFuture.get());
-            periods.add(currentYearFuture.get());
-            periods.add(lastYearFuture.get());
-            periods.add(totalFuture.get());
+            itemsStatsAggregated.addStat(currWeekFuture.get());
+            itemsStatsAggregated.addStat(lastWeekFuture.get());
+            itemsStatsAggregated.addStat(currentMonthFuture.get());
+            itemsStatsAggregated.addStat(lastMonthFuture.get());
+            itemsStatsAggregated.addStat(currentYearFuture.get());
+            itemsStatsAggregated.addStat(lastYearFuture.get());
+            itemsStatsAggregated.addStat(totalFuture.get());
         } catch (InterruptedException | ExecutionException e) {
             log.error("Error getting parallelized results", e);
         }
 
-        return new ItemsStatsAggregated(periods);
+        return itemsStatsAggregated;
     }
 
     public PeriodItemsStats itemsStatsPeriod(TimePeriod timePeriod) {

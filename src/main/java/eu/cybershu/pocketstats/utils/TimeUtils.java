@@ -21,7 +21,7 @@ public class TimeUtils {
         }
 
         LocalDateTime localDateTime = LocalDateTime.ofInstant(instant, defaultTimeZone())
-                .withHour(00)
+                .withHour(0)
                 .withMinute(0)
                 .withSecond(0)
                 .withNano(1);
@@ -54,13 +54,5 @@ public class TimeUtils {
     public static Instant toEndOfDayInstant(LocalDate date) {
         LocalDateTime dateTime = LocalDateTime.of(date, LocalTime.of(23, 59, 59));
         return dateTime.atZone(defaultTimeZone()).toInstant();
-    }
-
-    private static Instant toInstant(LocalDate localDate) {
-        return localDate.atStartOfDay().atZone(ZoneId.systemDefault()).toInstant();
-    }
-
-    private static LocalDate getLocalDate() {
-        return LocalDate.now();
     }
 }
