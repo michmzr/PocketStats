@@ -52,18 +52,25 @@ jobs:
         with:
           name: app.jar
           path: ./build/libs/app.jar
-#      - name: Deploy to Heroku
-#        # You may pin to the exact commit or the version.
-#        # uses: AkhileshNS/heroku-deploy@5ef17ff17a3fb8e9ad822ae6a61648a3ef9e0c3d
-#        uses: AkhileshNS/heroku-deploy@v3.12.13
-#        with:
-#          heroku_api_key: ${{ secrets.HEROKU_API_KEY }}
-#          heroku_email: michmzr@gmail.com
-#          heroku_app_name: getpocket-stats
-#          dontuseforce: 0
-#          remote_branch: "main"
-#        env:
-#          HD_MONGODB_DB: test
-#          HD_MONGODB_URI: ${{ secrets.MONGODB_URI }}
-#          HD_POCKET_CONSUMER_KEY: ${{ secrets.POCKET_CONSUMER_KEY }}
-#          HD_BACKEND_URL: https://getpocket-stats.herokuapp.com
+      - name: Install SSH key
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+          ssh-keyscan 38.242.142.123 >> ~/.ssh/known_hosts
+        env:
+          SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
+
+      - name: Deploy app.jar to server
+        run: |
+          scp ./build/libs/app.jar pocketstats@38.242.142.123:/usr/lib/pocketstats/app.jar
+        env:
+          SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
+      - name: Run commands on server
+        run: |
+          ssh pocketstats@38.242.142.123 'sudo systemctl stop pocketstats.service'
+          ssh pocketstats@38.242.142.123 'sudo systemctl daemon-reload'
+          ssh pocketstats@38.242.142.123 'sudo systemctl start pocketstats.service'
+          ssh pocketstats@38.242.142.123 'systemctl status pocketstats.service'
+        env:
+          SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
