@@ -69,6 +69,6 @@ jobs:
 
       - name: Run script on server
         run: |
-          ssh pocketstats@38.242.142.123 'bash -s' < ./path/to/your/script.sh
+          ssh pocketstats@38.242.142.123 'bash -s' < ./pocketstats-start.sh
         env:
           SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
