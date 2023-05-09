@@ -66,9 +66,11 @@ jobs:
           scp ./build/libs/app.jar pocketstats@38.242.142.123:/usr/lib/pocketstats/app.jar
         env:
           SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
-
-      - name: Run script on server
+      - name: Run commands on server
         run: |
-          ssh pocketstats@38.242.142.123 'bash -s' < ./pocketstats-start.sh
+          ssh pocketstats@38.242.142.123 'sudo systemctl stop pocketstats.service'
+          ssh pocketstats@38.242.142.123 'sudo systemctl daemon-reload'
+          ssh pocketstats@38.242.142.123 'sudo systemctl start pocketstats.service'
+          ssh pocketstats@38.242.142.123 'systemctl status pocketstats.service'
         env:
           SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
