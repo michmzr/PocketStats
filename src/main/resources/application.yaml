@@ -25,6 +25,8 @@ server:
     include-binding-errors: always
 
 spring:
+  server:
+    port: ${PORT:8081}
   jackson:
     serialization:
       WRITE_DATES_AS_TIMESTAMPS: false
