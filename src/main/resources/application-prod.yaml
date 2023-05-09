@@ -1,6 +1,6 @@
 auth:
   pocket:
-    redirect_uri: ${BACKEND_URL:https://getpocket-stats.herokuapp.com}/pocket/auth/token
+    redirect_uri: ${BACKEND_URL}/pocket/auth/token
 
 spring:
   server:
