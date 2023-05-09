@@ -1,3 +1,9 @@
 auth:
   pocket:
     redirect_uri: ${BACKEND_URL:https://getpocket-stats.herokuapp.com}/pocket/auth/token
+
+spring:
+  server:
+    port: ${PORT:8081}
+    servlet:
+      context-path: /pocketstats
