@@ -12,7 +12,7 @@ auth:
       access_token: https://getpocket.com/v3/oauth/authorize
       get: https://getpocket.com/v3/get
     consumer-key: ${POCKET_CONSUMER_KEY}
-    redirect_uri: ${BACKEND_URL:http://localhost:8081}/pocket/auth/token
+    redirect_uri: ${VUE_APP_BACKEND_URL:http://localhost:8081}/pocket/auth/token
 
 management:
   endpoints:
@@ -20,15 +20,11 @@ management:
       exposure:
         include: [ 'configprops', 'mappings', 'health', 'info', 'logfile', 'loggers', 'endpoints' ]
 server:
-  port: ${PORT:8081}
+  port: ${PORT:8080}
   error:
     include-binding-errors: always
 
 spring:
-  server:
-    port: ${PORT:8081}
-    servlet:
-      context-path: /pocketstats
   jackson:
     serialization:
       WRITE_DATES_AS_TIMESTAMPS: false
