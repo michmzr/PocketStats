@@ -32,12 +32,14 @@ import java.util.concurrent.ExecutionException;
 @Service
 public class PocketItemStatsService {
     private final MongoTemplate mongoTemplate;
+
     private final Clock clock;
 
     public PocketItemStatsService(
+            Clock clock,
             MongoTemplate mongoTemplate
     ) {
-        this.clock = Clock.systemUTC();
+        this.clock = clock;
         this.mongoTemplate = mongoTemplate;
     }
 
@@ -223,11 +225,14 @@ public class PocketItemStatsService {
                                 .append("archived", 1L))));
 
         Document docs = result.first();
-        Objects.requireNonNull(docs);
 
-        return new PeriodItemsStats(
-                docs.getLong("added"), docs.getLong("archived")
-        );
+        if (docs == null) {
+            return new PeriodItemsStats(0L, 0L);
+        } else {
+            return new PeriodItemsStats(
+                    docs.getLong("added"), docs.getLong("archived")
+            );
+        }
     }
 
     public PeriodItemsStats itemsStatsTotal() {

@@ -166,3 +166,8 @@ venv
 
 # Logs
 loga
+src/main/java/eu/cybershu/pocketstats/pocket/api/.DS_Store
+.DS_Store
+src/.DS_Store
+src/main/.DS_Store
+src/main/raporting/.DS_Store

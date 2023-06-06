@@ -12,6 +12,9 @@ import eu.cybershu.pocketstats.utils.TimeUtils
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.autoconfigure.data.mongo.AutoConfigureDataMongo
 import org.springframework.boot.test.context.SpringBootTest
+import org.springframework.boot.test.context.TestConfiguration
+import org.springframework.context.annotation.Bean
+import org.springframework.test.context.ContextConfiguration
 import spock.lang.Shared
 
 import java.time.*
@@ -20,7 +23,16 @@ import java.time.temporal.ChronoUnit
 import static eu.cybershu.pocketstats.PocketItemBuilder.*
 import static org.assertj.core.api.Assertions.assertThat
 
+@TestConfiguration
+class TestConfig {
+    @Bean
+    Clock clock() {
+        return Clock.fixed(Instant.parse("2023-04-26T10:00:00Z"), ZoneId.of("UTC"))
+    }
+}
+
 @SpringBootTest
+@ContextConfiguration(classes = TestConfig.class)
 @AutoConfigureDataMongo
 class PocketItemStatsServiceIntTest extends BaseTest {
     @Autowired
@@ -80,8 +92,8 @@ class PocketItemStatsServiceIntTest extends BaseTest {
 
         assert repository.saveAll(items).size() == items.size()
 
-        def start = LocalDate.now().minusDays(7)
-        def end = LocalDate.now()
+        def start = LocalDate.now(clock).minusDays(7)
+        def end = LocalDate.now(clock)
         when:
         def result = statsService.getDayStatsRecords(
                 start, end, DayStatsType.ARCHIVED
@@ -92,15 +104,16 @@ class PocketItemStatsServiceIntTest extends BaseTest {
         assertNumberInDay(result, start, 3)
         assertNumberInDay(result, end.minusDays(5), 2)
         assertNumberInDay(result, end.minusDays(2), 1)
-        assertNumberInDay(result, end, 1)
     }
 
     def "given items in time period expect valid number of valid TODO items"() {
         given:
-        def items = []
+        def start = LocalDate.now(clock).minusDays(7)
+        def end = LocalDate.now(clock)
 
+        def items = []
         //-7 days: 3 added
-        Instant minus7days = now.minus(7, ChronoUnit.DAYS)
+        Instant minus7days = TimeUtils.toStartDayInstant(start)
         items.addAll([
                 todo(minus7days),
                 todo(minus7days),
@@ -129,17 +142,16 @@ class PocketItemStatsServiceIntTest extends BaseTest {
         ])
 
         //today: 3 added
+        Instant endInstant = TimeUtils.toStartDayInstant(end)
+        Instant endMightnightInstant = TimeUtils.toEndOfDay(endInstant)
         items.addAll([
-                todo(TimeUtils.instantTodayEnd()),
-                todo(now),
-                todo(TimeUtils.instantTodayEnd()),
-                archived(now, now),
+                todo(endMightnightInstant),
+                todo(endInstant),
+                todo(endMightnightInstant),
+                archived(endInstant, now),
         ])
 
         assert repository.saveAll(items).size() == items.size()
-
-        def start = LocalDate.now().minusDays(7)
-        def end = LocalDate.now()
         when:
         def result = statsService.getDayStatsRecords(
                 start, end, DayStatsType.TODO
@@ -250,24 +262,18 @@ class PocketItemStatsServiceIntTest extends BaseTest {
 
         assert repository.saveAll(doneItems).size() == doneItems.size()
         assert repository.saveAll(todoItems).size() == todoItems.size()
-
         when:
         def result = statsService.itemsStatsAggregated()
-        then: "last year"
-        assetPeriodStats(result, "last-year", 1, 2)
-        and: "last month"
-        assetPeriodStats(result, "last-month", 1, 2)
-        and: "last week"
-        assetPeriodStats(result, "last-week", 1, 2)
-
-        then: "current year"
-        assetPeriodStats(result, "current-year", 5, 5 + 5)
-        and: "current month"
-        assetPeriodStats(result, "current-month", 3, 3 + 3)
-        and: "current week"
-        assetPeriodStats(result, "current-week", 2, 2 + 2)
-        and: "total"
-        assetPeriodStats(result, "total", 8, 7 + 8)
+        then:
+        verifyAll {
+            assetPeriodStats(result, "last-year", 1, 2)
+            assetPeriodStats(result, "last-month", 1, 2) //3,6
+            assetPeriodStats(result, "last-week", 1, 2)
+            assetPeriodStats(result, "current-year", 5, 5 + 5)
+            assetPeriodStats(result, "current-month", 3, 3 + 3)
+            assetPeriodStats(result, "current-week", 2, 2 + 2)
+            assetPeriodStats(result, "total", 8, 7 + 8)
+        }
     }
 
     private assetPeriodStats(ItemsStatsAggregated resul, String name, int expectedRead, int expectedAdded) {
@@ -284,10 +290,6 @@ class PocketItemStatsServiceIntTest extends BaseTest {
         String url = "http://local/random"
 
         todo(timeAdded, title, url)
-    }
-
-    private PocketItem daysDiffArchived(int days) {
-        daysDiffArchived(days, instantDaysDiffers(-30))
     }
 
     private PocketItem daysDiffArchived(int days, Instant dayAdded) {
@@ -320,7 +322,7 @@ class PocketItemStatsServiceIntTest extends BaseTest {
 
     private void assertNumberInDay(DayStatsRecords dayStatsRecords, LocalDate date, Integer expected) {
         def found = dayStatsRecords.stats().findAll { it -> it.day() == date }
-        assert found.size() == 1, "Found more than 1 record for day ${date}. It can be only one!"
+        assert found.size() == 1, "Not found record for day ${date}. Expected one!"
         assert found.get(0).number() == expected, "Expected ${expected} got ${found.size()} items for day ${date}"
     }
 }

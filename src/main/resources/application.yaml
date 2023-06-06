@@ -12,7 +12,7 @@ auth:
       access_token: https://getpocket.com/v3/oauth/authorize
       get: https://getpocket.com/v3/get
     consumer-key: ${POCKET_CONSUMER_KEY}
-    redirect_uri: ${BACKEND_URL:http://localhost:8081}/pocket/auth/token
+    redirect_uri: ${VUE_APP_BACKEND_URL:http://localhost:8081}/pocket/auth/token
 
 management:
   endpoints:

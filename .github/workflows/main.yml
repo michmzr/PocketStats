@@ -2,6 +2,10 @@ name: PocketStats CI
 
 on: [push, pull_request]
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
 jobs:
   tests:
     runs-on: ubuntu-latest
@@ -26,8 +30,8 @@ jobs:
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
   build:
-    #    needs:
-    #      - tests
+    needs:
+     - tests
     runs-on: ubuntu-latest
     environment: master
     steps:
@@ -60,7 +64,6 @@ jobs:
           ssh-keyscan 38.242.142.123 >> ~/.ssh/known_hosts
         env:
           SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
-
       - name: Deploy app.jar to server
         run: |
           scp ./build/libs/app.jar pocketstats@38.242.142.123:/usr/lib/pocketstats/app.jar
@@ -74,3 +77,10 @@ jobs:
           ssh pocketstats@38.242.142.123 'systemctl status pocketstats.service'
         env:
           SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
+      - name: Health check
+        run: |
+          echo "Waiting for 30 seconds before healthcheck"
+          sleep 30
+          echo "Performing healthcheck"
+          wget --retry-connrefused --waitretry=5 --read-timeout=20 --timeout=15 -t 10 http://38.242.142.123:8080/pocketstats/actuator/health -O /dev/null
+        shell: bash
