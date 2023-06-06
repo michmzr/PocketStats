@@ -60,7 +60,6 @@ jobs:
           ssh-keyscan 38.242.142.123 >> ~/.ssh/known_hosts
         env:
           SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
-
       - name: Deploy app.jar to server
         run: |
           scp ./build/libs/app.jar pocketstats@38.242.142.123:/usr/lib/pocketstats/app.jar
