@@ -31,7 +31,7 @@
 
 <script lang="ts">
 import {Vue} from "vue-class-component";
-import {useSessionStore} from "@/store";
+import {useSessionStore, useSyncStore} from "@/store";
 import {StatsService} from "@/services/stats-service";
 import {ItemsStatsAggregated, ItemsStatsPerPeriod, TimePeriod} from "@/models/stats-models";
 import {format, parseISO} from "date-fns";
@@ -42,6 +42,7 @@ export default class StatsPerPeriod extends Vue {
 
   sessionStore = useSessionStore()
   statsService = new StatsService()
+  syncStore = useSyncStore()
 
   itemsStats: ItemsStatsPerPeriod[] = [];
 
@@ -58,7 +59,10 @@ export default class StatsPerPeriod extends Vue {
       this.authorized = state.authorized
     })
 
-    this.loadStats()
+    this.syncStore.$subscribe(() => {
+      console.debug(`Got sync store change - reloading component data`)
+      this.loadStats()
+    })
   }
 
   displayPeriod(period: TimePeriod): String {

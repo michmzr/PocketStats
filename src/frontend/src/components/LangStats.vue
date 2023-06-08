@@ -12,7 +12,7 @@
 
 <script lang="ts">
 import {Options, Vue} from "vue-class-component";
-import {useSessionStore} from "@/store";
+import {useSessionStore, useSyncStore} from "@/store";
 import {Pie} from "vue-chartjs";
 import {ILangStats} from "@/models/stats-models";
 import {StatsService} from "@/services/stats-service";
@@ -26,6 +26,7 @@ ChartJS.register(ArcElement, Tooltip, Legend)
 export default class LangStats extends Vue {
   authorized: Boolean = false;
   sessionStore = useSessionStore();
+  syncStore = useSyncStore()
 
   loadedData: boolean = false;
 
@@ -60,7 +61,10 @@ export default class LangStats extends Vue {
       this.authorized = state.authorized;
     });
 
-    this.loadData();
+    this.syncStore.$subscribe(() => {
+      console.debug(`Got sync store change - reloading component data`)
+      this.loadData()
+    })
   }
 
   loadData() {

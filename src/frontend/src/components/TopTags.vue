@@ -1,39 +1,29 @@
 <template>
-  <div class="card" v-if="authorized">
-    <div class="card-body" v-if="loadedData">
+  <div v-if="authorized" class="card">
+    <div v-if="loadedData" class="card-body">
       <h5 class="card-title">Top {{ limitTags }} the most popular tags.</h5>
-      <table class="table">
-        <thead>
-        <tr>
-          <th scope="col">Tag name</th>
-          <th scope="col">Occurs</th>
-        </tr>
-        </thead>
-        <tbody>
-        <tr v-for="item in topTags" v-bind:key="item.name">
-          <td>{{ item.name }}</td>
-          <td>{{ item.count }}</td>
-        </tr>
-        </tbody>
-      </table>
+      <span v-for="item in topTags" v-bind:key="item.name" class="badge ">
+              <b-badge variant="dark">{{ item.name }} <b-badge variant="light">{{ item.count }}</b-badge></b-badge>
+      </span>
     </div>
   </div>
 </template>
 
 <script lang="ts">
 import {Vue} from "vue-class-component";
-import {useSessionStore} from "@/store";
+import {useSessionStore, useSyncStore} from "@/store";
 import {StatsService} from "@/services/stats-service";
 import {ITopTag, ITopTags} from "@/models/stats-models";
 
 export default class TopTags extends Vue {
-  limitTags: number = 10
+  limitTags: number = 30
 
   authorized: Boolean = false
   loadedData: boolean = false
 
   sessionStore = useSessionStore()
   statsService = new StatsService()
+  syncStore = useSyncStore()
 
   topTags: ITopTag[] = [] as ITopTag[]
 
@@ -50,7 +40,10 @@ export default class TopTags extends Vue {
       this.authorized = state.authorized;
     });
 
-    this.loadTopTags();
+    this.syncStore.$subscribe(() => {
+      console.debug(`Got sync store change - reloading component data`)
+      this.loadTopTags()
+    })
   }
 
   loadTopTags() {

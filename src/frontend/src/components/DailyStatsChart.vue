@@ -32,7 +32,7 @@
 
 <script lang="ts">
 import {Options, Vue} from "vue-class-component";
-import {useSessionStore} from "@/store";
+import {useSessionStore, useSyncStore} from "@/store";
 import {StatsService} from "@/services/stats-service";
 import {DayStatsType, IDayStat} from "@/models/stats-models";
 import Datepicker from 'vue3-datepicker'
@@ -62,6 +62,7 @@ export default class DailyStatsChart extends Vue {
   authorized: Boolean = false
 
   sessionStore = useSessionStore()
+  syncStore = useSyncStore()
   statsService = new StatsService()
 
   formDayStart: Date = subDays(new Date(), 7)
@@ -72,15 +73,15 @@ export default class DailyStatsChart extends Vue {
     datasets: [
       {
         label: 'Read items in day',
-        backgroundColor: '#f87979',
-        borderColor: '#f87979',
+        backgroundColor: '#0a4687',
+        borderColor: '#0a4687',
         data: [] as number[],
         yAxisID: 'y',
       },
       {
         label: 'Added items in day',
-        backgroundColor: '#0a4687',
-        borderColor: '#0a4687',
+        backgroundColor: '#f87979',
+        borderColor: '#f87979',
         data: [] as number[],
         yAxisID: 'y1',
       }
@@ -116,12 +117,15 @@ export default class DailyStatsChart extends Vue {
   }
 
   mounted() {
-    this.onChangedDatePeriod();
-
     this.isAuthorized()
     this.sessionStore.$subscribe((mutation, state) => {
       this.authorized = state.authorized
     });
+
+    this.syncStore.$subscribe(() => {
+      console.debug(`Got sync store change - reloading component data`)
+      this.onChangedDatePeriod()
+    })
   }
 
   clearChart() {
