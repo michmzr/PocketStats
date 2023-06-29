@@ -1,6 +1,7 @@
 package eu.cybershu.pocketstats.stats;
 
 import eu.cybershu.pocketstats.api.ApiResponse;
+import eu.cybershu.pocketstats.pocket.api.ActivityHeatmapStats;
 import eu.cybershu.pocketstats.pocket.api.ItemsStatsAggregated;
 import eu.cybershu.pocketstats.pocket.api.PocketItemStatsService;
 import lombok.extern.slf4j.Slf4j;
@@ -50,5 +51,17 @@ public class StatsController {
     @GetMapping(value = "/byPeriods", produces = MediaType.APPLICATION_JSON_VALUE)
     public ApiResponse<ItemsStatsAggregated> itemStatsAggregatedByPeriod() {
         return new ApiResponse<>(0, null, statsService.itemsStatsAggregated());
+    }
+
+    @GetMapping(value = "/heatmap",
+            produces = MediaType.APPLICATION_JSON_VALUE)
+    public ApiResponse<ActivityHeatmapStats> heatmapStats(
+            @RequestParam StatsWithStatusType type
+    ) {
+        log.info("Heatmap with status {}", type);
+
+        var heatmapRecords = statsService.heatmapOfStatus(type);
+
+        return new ApiResponse<>(0, null, heatmapRecords);
     }
 }

@@ -22,7 +22,6 @@
     </div>
   </main>
 </template>
-
 <script>
 import {defineComponent} from "vue";
 import TopAuth from "@/components/TopAuth.vue";

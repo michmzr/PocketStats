@@ -46,3 +46,18 @@ export type TimePeriod = {
     begin: string //ISO standard
     end: string //ISO standard
 }
+
+export enum HeatmapType {
+    ARCHIVED = "ARCHIVED",
+    TODO = "TODO"
+}
+
+export interface IActivityHeatmapItem {
+    hour: number
+    weekday: number
+    count: number
+}
+
+export interface IActivityHeatmapStats {
+    items: IActivityHeatmapItem[],
+}

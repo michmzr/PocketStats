@@ -4,6 +4,7 @@ import VueAxios from 'vue-axios'
 import axios from 'axios'
 import router from "@/router";
 import {createPinia} from "pinia";
+import VueApexCharts from "vue3-apexcharts";
 import {BootstrapVue3, BToastPlugin} from "bootstrap-vue-3";
 
 import 'bootstrap/dist/css/bootstrap.css'
@@ -26,6 +27,7 @@ app
     .use(router)
     .use(BootstrapVue3)
     .use(BToastPlugin)
+    .use(VueApexCharts)
     .component("font-awesome-icon", FontAwesomeIcon)
     .mount('#app')
 
