@@ -6,7 +6,7 @@ import eu.cybershu.pocketstats.pocket.api.BaseTest
 import eu.cybershu.pocketstats.pocket.api.ItemsStatsAggregated
 import eu.cybershu.pocketstats.pocket.api.PocketItemStatsService
 import eu.cybershu.pocketstats.stats.DayStatsRecords
-import eu.cybershu.pocketstats.stats.DayStatsType
+import eu.cybershu.pocketstats.stats.StatsWithStatusType
 import eu.cybershu.pocketstats.utils.TimePeriod
 import eu.cybershu.pocketstats.utils.TimeUtils
 import org.springframework.beans.factory.annotation.Autowired
@@ -96,10 +96,10 @@ class PocketItemStatsServiceIntTest extends BaseTest {
         def end = LocalDate.now(clock)
         when:
         def result = statsService.getDayStatsRecords(
-                start, end, DayStatsType.ARCHIVED
+                start, end, StatsWithStatusType.ARCHIVED
         )
         then:
-        result.type() == DayStatsType.ARCHIVED
+        result.type() == StatsWithStatusType.ARCHIVED
         and: "assert numbers"
         assertNumberInDay(result, start, 3)
         assertNumberInDay(result, end.minusDays(5), 2)
@@ -154,10 +154,10 @@ class PocketItemStatsServiceIntTest extends BaseTest {
         assert repository.saveAll(items).size() == items.size()
         when:
         def result = statsService.getDayStatsRecords(
-                start, end, DayStatsType.TODO
+                start, end, StatsWithStatusType.TODO
         )
         then:
-        result.type() == DayStatsType.TODO
+        result.type() == StatsWithStatusType.TODO
         and: "assert numbers"
         assertNumberInDay(result, start, 3)
         assertNumberInDay(result, end.minusDays(5), 4)
@@ -276,12 +276,119 @@ class PocketItemStatsServiceIntTest extends BaseTest {
         }
     }
 
+    private def "expect thrown IllegalArgumentException exception when getting heatmap of DELETED items stats"() {
+        when:
+        statsService.heatmapOfStatus(StatsWithStatusType.DELETED)
+        then:
+        thrown(IllegalArgumentException)
+    }
+
+    private def "expect to get a valid heatmap of ARCHIVED items stats"() {
+        given:
+        def pocketItems = [
+                hourAndDayArchivedItem(1, 1),
+                hourAndDayArchivedItem(2, 2),
+                hourAndDayAddedItem(2, 2),
+                hourAndDayArchivedItem(3, 3),
+                hourAndDayArchivedItem(4, 4),
+                hourAndDayArchivedItem(5, 5),
+                hourAndDayArchivedItem(5, 6),
+                hourAndDayArchivedItem(5, 6),
+                hourAndDayAddedItem(5, 6),
+                hourAndDayArchivedItem(11, 6),
+                hourAndDayArchivedItem(11, 7),
+        ]
+
+        assert repository.saveAll(pocketItems).size() == pocketItems.size()
+
+        when:
+        def result = statsService.heatmapOfStatus(StatsWithStatusType.ARCHIVED)
+        then:
+        def items = result.items()
+        !items.empty
+        verifyAll {
+            items.size() > 5
+            items.size() < pocketItems.size()
+
+            //by one weekday
+            items.findAll { it.weekday() == 6 }.size() == 2
+
+            //by one hour
+            items.findAll { it.hour() == 5 }.size() == 2
+
+            //by weekday and hour
+            items.find { it.hour() == 5 && it.weekday() == 6 }.count() == 2
+            items.find { it.hour() == 11 && it.weekday() == 7 }.count() == 1
+        }
+    }
+
+
+    private def "expect to get a valid heatmap of ADDED items stats"() {
+        given:
+        def pocketItems = [
+                hourAndDayArchivedItem(1, 1),
+                hourAndDayAddedItem(1, 1),
+                hourAndDayArchivedItem(2, 2),
+                hourAndDayArchivedItem(3, 3),
+                hourAndDayArchivedItem(4, 4),
+                hourAndDayAddedItem(6, 4),
+                hourAndDayArchivedItem(5, 5),
+                hourAndDayArchivedItem(5, 6),
+                hourAndDayArchivedItem(5, 6),
+                hourAndDayAddedItem(5, 6),
+                hourAndDayArchivedItem(11, 6),
+                hourAndDayArchivedItem(11, 7),
+                hourAndDayAddedItem(18, 7),
+        ]
+
+        assert repository.saveAll(pocketItems).size() == pocketItems.size()
+
+        when:
+        def result = statsService.heatmapOfStatus(StatsWithStatusType.TODO)
+        then:
+        def items = result.items()
+        !items.empty
+        verifyAll {
+            items.size() < pocketItems.size()
+
+            //by one weekday
+            items.findAll { it.weekday() == 6 }.size() == 2
+
+            //by one hour
+            items.findAll { it.hour() == 5 }.size() == 2
+
+            //by weekday and hour
+            items.find { it.hour() == 5 && it.weekday() == 6 }.count() == 3
+            items.find { it.hour() == 6 && it.weekday() == 4 }.count() == 1
+        }
+    }
+
     private assetPeriodStats(ItemsStatsAggregated resul, String name, int expectedRead, int expectedAdded) {
         assertThat(resul.findByName(name)).isPresent()
 
         def stats = resul.findByName(name).get().stats()
         assertThat(stats.read()).isEqualTo(expectedRead)
         assertThat(stats.added()).isEqualTo(expectedAdded)
+    }
+
+    private PocketItem hourAndDayArchivedItem(int hour, int weekday) {
+        def date = instantWithHourAndWeekday(hour, weekday)
+        archived(date, date)
+    }
+
+
+    private PocketItem hourAndDayAddedItem(int hour, int weekday) {
+        def date = instantWithHourAndWeekday(hour, weekday)
+        todo(date)
+    }
+
+    private Instant instantWithHourAndWeekday(int hour, int weekday) {
+        LocalDateTime localDateTime = LocalDateTime.now(clock)
+        LocalDateTime modifiedDateTime = localDateTime
+                .withHour(hour)
+                .with(DayOfWeek.of(weekday))
+
+        modifiedDateTime.atZone(ZoneId.systemDefault()).toInstant()
     }
 
     private PocketItem daysDiffAdded(int days) {

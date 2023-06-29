@@ -22,6 +22,7 @@
 import {Vue} from "vue-class-component";
 import {useSessionStore} from "@/store";
 import {AuthorizationService} from "@/services/authorization-service";
+
 export default class TopAuth extends Vue {
   waitingForLogin: Boolean = false
   authorized: Boolean = false
@@ -42,7 +43,6 @@ export default class TopAuth extends Vue {
 
       let self = this
       authService.getLoginUrl().then((response) => {
-        console.debug("got login url" +   response.data.data.link)
         self.loginUrl = response.data.data.link
         self.showLoginButton = true
       });

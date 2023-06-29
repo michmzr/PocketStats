@@ -2,7 +2,7 @@ package eu.cybershu.pocketstats.stats;
 
 import eu.cybershu.pocketstats.pocket.api.ItemStatus;
 
-public enum DayStatsType {
+public enum StatsWithStatusType {
     ARCHIVED,
     DELETED,
     TODO;

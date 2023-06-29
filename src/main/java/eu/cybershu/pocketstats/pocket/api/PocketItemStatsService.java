@@ -5,7 +5,7 @@ import com.mongodb.client.MongoCollection;
 import eu.cybershu.pocketstats.events.UserSynchronizedItemsEvent;
 import eu.cybershu.pocketstats.stats.DayStat;
 import eu.cybershu.pocketstats.stats.DayStatsRecords;
-import eu.cybershu.pocketstats.stats.DayStatsType;
+import eu.cybershu.pocketstats.stats.StatsWithStatusType;
 import eu.cybershu.pocketstats.stats.TopTag;
 import eu.cybershu.pocketstats.utils.TimePeriod;
 import eu.cybershu.pocketstats.utils.TimeUtils;
@@ -44,7 +44,7 @@ public class PocketItemStatsService {
     }
 
     @Cacheable("stats-day-records")
-    public DayStatsRecords getDayStatsRecords(LocalDate start, LocalDate end, DayStatsType type) {
+    public DayStatsRecords getDayStatsRecords(LocalDate start, LocalDate end, StatsWithStatusType type) {
         log.info("Calculating {} items status by day from {} to {}", type, start, end);
 
         final Date gteDate = Date.from(start.atStartOfDay()
@@ -85,7 +85,7 @@ public class PocketItemStatsService {
         return new DayStatsRecords(days, type);
     }
 
-    private String getTimeFieldForAggregation(DayStatsType type) {
+    private String getTimeFieldForAggregation(StatsWithStatusType type) {
         return switch (type) {
             case ARCHIVED -> "timeRead";
             case TODO -> "timeAdded";
@@ -289,8 +289,88 @@ public class PocketItemStatsService {
         return langStats;
     }
 
+    /**
+     * Returns aggregated items with status (read or added) by hours and weekday. its for creating heatmap of activity
+     *
+     * @param type Item status
+     */
+    @Cacheable(value = "heatmap-by-status", key = "#type")
+    public ActivityHeatmapStats heatmapOfStatus(StatsWithStatusType type) {
+        if (type == StatsWithStatusType.DELETED) {
+            throw new IllegalArgumentException("DELETED heatmap activity is not supported.");
+        }
+
+        ItemStatus itemStatus = type.toItemStatus();
+        log.info("Calculating activity heatmap for status {}...", itemStatus);
+
+        String dateFieldForAggregation = "$" + getTimeFieldForAggregation(type);
+        log.debug("Using field {}", dateFieldForAggregation);
+
+        var collection = getPocketItemsCollection();
+
+        Document match;
+        if (itemStatus == ItemStatus.TO_READ) {
+            match = new Document("$match",
+                    new Document("status",
+                            new Document("$exists", true)
+                                    .append("$ne", ItemStatus.DELETED)));
+        } else {
+            match = new Document("$match",
+                    new Document("status", itemStatus.name()));
+        }
+
+        AggregateIterable<Document> resultsIter = collection.aggregate(
+                Arrays.asList(match,
+                        new Document("$project",
+                                new Document("timeRead", dateFieldForAggregation)
+                                        .append("hour",
+                                                new Document("$hour", dateFieldForAggregation))
+                                        .append("weekday",
+                                                new Document("$let",
+                                                        new Document("vars",
+                                                                new Document("weekday",
+                                                                        new Document("$subtract",
+                                                                                Arrays.asList(new Document("$dayOfWeek", dateFieldForAggregation), 1L))))
+                                                                .append("in",
+                                                                        new Document("$cond",
+                                                                                Arrays.asList(new Document("$eq",
+                                                                                        Arrays.asList("$$weekday", 0L)), 7L, "$$weekday")))))),
+                        new Document("$group",
+                                new Document("_id",
+                                        new Document("hour", "$hour")
+                                                .append("weekday", "$weekday"))
+                                        .append("count",
+                                                new Document("$sum", 1L))),
+                        new Document("$sort",
+                                new Document("count", -1L))));
+
+        /*
+        {
+              "_id": {
+                "hour": 18,
+                "weekday": 1
+              },
+              "count": 289
+            }
+         */
+        List<ActivityHeatmapItem> items = new LinkedList<>();
+        for (Document docs : resultsIter) {
+            Document hourAndWeekday = (Document) docs.get("_id");
+            long count = docs.getLong("count");
+
+            int weekday = Math.toIntExact(hourAndWeekday.getLong("weekday")); //1-monday, 7- sunday
+            int hour = hourAndWeekday.getInteger("hour"); //0-23
+
+            items.add(new ActivityHeatmapItem(
+                    hour,
+                    weekday, count));
+        }
+
+        return new ActivityHeatmapStats(items);
+    }
+
     @EventListener
-    @CacheEvict(value = {"stats-day-records", "stats-top-tags", "stats-lang-stats", "stats-periods-aggregated"}, allEntries = true)
+    @CacheEvict(value = {"stats-day-records", "stats-top-tags", "stats-lang-stats", "stats-periods-aggregated", "heatmap-by-status"}, allEntries = true)
     public void handleUserRemovedEvent(UserSynchronizedItemsEvent event) {
         log.info("User synchronized items with GetPocket: {}", event.getSyncStatus());
     }

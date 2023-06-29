@@ -14,6 +14,6 @@ public record StatsRequest(
         LocalDate end,
 
         @NotNull
-        DayStatsType type
+        StatsWithStatusType type
 ) {
 }

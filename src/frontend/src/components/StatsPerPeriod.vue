@@ -14,7 +14,7 @@
         </thead>
         <tbody>
 
-        <tr v-for="periodStats in  itemsStats" v-bind:key="periodStats.nameShort">
+        <tr v-for="periodStats in itemsStats" v-bind:key="periodStats.nameShort">
           <td>{{ periodStats.nameDesc }}</td>
           <td>
                <span
