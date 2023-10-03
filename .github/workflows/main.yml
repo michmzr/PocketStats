@@ -81,6 +81,6 @@ jobs:
         run: |
           echo "Waiting for 30 seconds before healthcheck"
           sleep 30
-          echo "Performing healthcheck"
+          echo "Performing healthcheck..."
           wget --retry-connrefused --waitretry=5 --read-timeout=20 --timeout=15 -t 10 http://38.242.142.123:8080/pocketstats/actuator/health -O /dev/null
         shell: bash
