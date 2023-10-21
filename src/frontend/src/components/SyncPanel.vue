@@ -1,7 +1,7 @@
 <template>
   <div class="card" v-if="authorized && loadedData">
     <div class="card-body">
-      <strong>Last sync:</strong> {{ lastSyncMsg }}
+      <strong>Last sync:</strong> {{ lastSyncMsg }}, synchronized items: {{ lastSync?.records }}
 
       <b-button variant="link" :disabled="syncing"
                 size="sm" v-on:click="sync">

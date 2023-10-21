@@ -72,17 +72,41 @@ export default class LangStats extends Vue {
       let langStats = responseData
       const labels: string[] = [];
       const values: number[] = [];
+      let total: number = 0;
 
       for (let [key, value] of Object.entries(langStats.langCount)) {
-        labels.push(`${key} (${value})`);
+        labels.push(key);
         values.push(value);
+        total += value;
       }
 
-      this.chartData.labels = labels;
-      this.chartData.datasets[0].data = values
+      const chartLabels: string[] = [];
+      const chartDatasets: number[] = [];
+
+      //get 2 most frequent languages from datasets and related labels
+      let mostFrequentLangs = values.slice().sort((a, b) => b - a).slice(0, 2)
+      //get names of the most popular languages from labels and values
+      let mostFrequentLangsNames = labels.filter((label, index) => {
+        return mostFrequentLangs.includes(values[index])
+      })
+
+      for (let [key, value] of Object.entries(langStats.langCount)) {
+        if (!mostFrequentLangsNames.includes(key)) {
+          continue
+        }
+
+        chartLabels.push(`${key} (${value})`);
+        chartDatasets.push(value);
+      }
+
+      chartLabels.push(`other (${total - chartDatasets.reduce((a, b) => a + b, 0)})`)
+      chartDatasets.push(total - chartDatasets.reduce((a, b) => a + b, 0))
+
+      this.chartData.labels = chartLabels;
+      this.chartData.datasets[0].data = chartDatasets
 
       let colors: string[] = []
-      for (let i = 0; i < values.length; i++) {
+      for (let i = 0; i < chartDatasets.length; i++) {
         colors.push(this.getRandomColor())
       }
       this.chartData.datasets[0].backgroundColor = colors;
