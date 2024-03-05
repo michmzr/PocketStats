@@ -1,6 +1,6 @@
 # PocketStats
 
-App for visualising [GetPocket](https://getpocket.com/) usage stats
+App for visualising [GetPocket](https://getpocket.com/) usage stats.
 
 ## Config
 
