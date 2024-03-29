@@ -1,5 +1,6 @@
 package eu.cybershu.pocketstats.reader.api;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -46,9 +47,12 @@ public record ReaderItem(
         //@JsonProperty List<String> tags,
         @JsonProperty("site_name") String siteName,
         @JsonProperty("word_count") int wordCount,
-        @JsonProperty Instant created_at,
-        @JsonProperty Instant updated_at,
-        @JsonProperty Instant published_date,
+        @JsonProperty
+        @JsonFormat(shape = JsonFormat.Shape.NUMBER, without = JsonFormat.Feature.WRITE_DATE_TIMESTAMPS_AS_NANOSECONDS) Instant created_at,
+        @JsonProperty
+        @JsonFormat(shape = JsonFormat.Shape.NUMBER, without = JsonFormat.Feature.WRITE_DATE_TIMESTAMPS_AS_NANOSECONDS) Instant updated_at,
+        @JsonProperty
+        @JsonFormat(shape = JsonFormat.Shape.NUMBER, without = JsonFormat.Feature.WRITE_DATE_TIMESTAMPS_AS_NANOSECONDS) Instant published_date,
         @JsonProperty String notes,
         @JsonProperty String summary,
         @JsonProperty("image_url") String imageUrl,
