@@ -18,4 +18,17 @@ public class RequestUtils {
         }
         return HttpRequest.BodyPublishers.ofString(builder.toString());
     }
+
+    public static String mapToUrlQueries(Map<Object, Object> data) {
+        var builder = new StringBuilder();
+        for (Map.Entry<Object, Object> entry : data.entrySet()) {
+            if (!builder.isEmpty()) {
+                builder.append("&");
+            }
+            builder.append(URLEncoder.encode(entry.getKey().toString(), StandardCharsets.UTF_8));
+            builder.append("=");
+            builder.append(URLEncoder.encode(entry.getValue().toString(), StandardCharsets.UTF_8));
+        }
+        return builder.toString();
+    }
 }
