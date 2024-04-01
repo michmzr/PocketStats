@@ -16,16 +16,9 @@ import java.time.Instant;
 @Value
 @Builder
 public class ReadwiseFetchParams {
-    String updatedAfter;
+    Instant updatedAfter;
     Location location;
     Category category;
-
-    public static class ReadwiseFetchParamsBuilder {
-        public ReadwiseFetchParamsBuilder updatedAfter(Instant updatedAfter) {
-            this.updatedAfter = updatedAfter.toString();
-            return this;
-        }
-    }
 
     public String toQueryParams() {
         StringBuilder builder = new StringBuilder();

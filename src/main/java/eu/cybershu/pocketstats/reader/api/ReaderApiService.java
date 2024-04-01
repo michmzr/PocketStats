@@ -1,16 +1,10 @@
 package eu.cybershu.pocketstats.reader.api;
 
-import com.fasterxml.jackson.annotation.JsonInclude;
-import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.SerializationFeature;
-import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
-import eu.cybershu.pocketstats.pocket.api.ApiXHeaders;
-import eu.cybershu.pocketstats.utils.RequestUtils;
+import io.github.resilience4j.ratelimiter.annotation.RateLimiter;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
-import org.springframework.util.StringUtils;
 
 import java.io.IOException;
 import java.net.URI;
@@ -20,7 +14,6 @@ import java.net.http.HttpResponse;
 import java.time.Duration;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.Map;
 
 /**
  * Service for interacting with the Readwise Reader API: https://readwise.io/reader_api
@@ -40,12 +33,10 @@ public class ReaderApiService {
                 .followRedirects(HttpClient.Redirect.NORMAL)
                 .connectTimeout(Duration.ofSeconds(60))
                 .build();
-        this.mapper = new ObjectMapper();
-        this.mapper
-                .registerModule(new JavaTimeModule())
-                .configure(SerializationFeature.WRITE_DATE_TIMESTAMPS_AS_NANOSECONDS, false)
-                .configure(DeserializationFeature.READ_DATE_TIMESTAMPS_AS_NANOSECONDS, false)
-                .setSerializationInclusion(JsonInclude.Include.NON_NULL);
+        this.mapper = new ObjectMapper().findAndRegisterModules();
+//        this.mapper.disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS)
+//        .disable(DeserializationFeature.READ_DATE_TIMESTAMPS_AS_NANOSECONDS)
+//
     }
 
     /**
@@ -75,6 +66,7 @@ public class ReaderApiService {
                     .builder()
                     .category(params.category())
                     .location(params.location())
+                    .updatedAfter(params.updatedAfter())
                     .pageCursor(response.nextPageCursor())
                     .build();
         } while (pageParams.pageCursor() != null);
@@ -82,6 +74,7 @@ public class ReaderApiService {
         return items;
     }
 
+    @RateLimiter(name = "readwise-api")
     private ReaderListResponse fetchPage(String accessToken, ReadwiseFetchPaginationParams params) throws IOException, InterruptedException {
         log.info("Fetching Readwise list with params: {}", params);
 
@@ -102,7 +95,8 @@ public class ReaderApiService {
             case 200:
                 String body = response.body();
 
-                return mapper.readValue(body, ReaderListResponse.class);
+                ReaderListResponse results = mapper.readValue(body, ReaderListResponse.class);
+                return results;
             case 401:
                 break;
             case 400:

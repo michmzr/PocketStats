@@ -39,3 +39,11 @@ spring:
       auto-index-creation: true
       database: ${MONGODB_DB:db}
       uri: ${MONGODB_URI}
+
+resilience4j.ratelimiter:
+  instances:
+    readwise-api:
+      limitForPeriod: 20
+      limitRefreshPeriod: 70s
+      timeoutDuration: 60s
+      eventConsumerBufferSize: 100

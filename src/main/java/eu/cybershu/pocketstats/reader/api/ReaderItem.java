@@ -1,14 +1,13 @@
 package eu.cybershu.pocketstats.reader.api;
 
-import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import lombok.AllArgsConstructor;
-import lombok.Data;
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
+import eu.cybershu.pocketstats.utils.InstantNanoSecondsConverter;
 
 import java.time.Instant;
-import java.util.List;
+import java.util.Map;
 
 /**
  {
@@ -44,15 +43,15 @@ public record ReaderItem(
         @JsonProperty String source,
         @JsonProperty Category category,
         @JsonProperty Location location,
-        //@JsonProperty List<String> tags,
+        @JsonProperty Map<String, Tag> tags,
         @JsonProperty("site_name") String siteName,
         @JsonProperty("word_count") int wordCount,
         @JsonProperty
-        @JsonFormat(shape = JsonFormat.Shape.NUMBER, without = JsonFormat.Feature.WRITE_DATE_TIMESTAMPS_AS_NANOSECONDS) Instant created_at,
+        @JsonDeserialize(converter = InstantNanoSecondsConverter.class) Instant created_at,
         @JsonProperty
-        @JsonFormat(shape = JsonFormat.Shape.NUMBER, without = JsonFormat.Feature.WRITE_DATE_TIMESTAMPS_AS_NANOSECONDS) Instant updated_at,
+        @JsonDeserialize(converter = InstantNanoSecondsConverter.class) Instant updated_at,
         @JsonProperty
-        @JsonFormat(shape = JsonFormat.Shape.NUMBER, without = JsonFormat.Feature.WRITE_DATE_TIMESTAMPS_AS_NANOSECONDS) Instant published_date,
+        String published_date,
         @JsonProperty String notes,
         @JsonProperty String summary,
         @JsonProperty("image_url") String imageUrl,

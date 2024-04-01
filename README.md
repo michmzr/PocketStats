@@ -9,7 +9,7 @@ App for visualising [GetPocket](https://getpocket.com/) and [Reader](https://rea
 #### Environment variables
 - `BACKEND_URL` - backend url, default: http://localhost:8080
 - `POCKET_CONSUMER_KEY` - get pocket consumer key
-- `READER_ACCESS_KEY` - readwise access key
+- `READER_ACCESS_TOKEN` - readwise access key
 - `MONGODB_HOST` - mongo db host 
 - `MONGODB_URI` - full mongodb uri with login and pass
 
