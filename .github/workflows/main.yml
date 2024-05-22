@@ -11,6 +11,13 @@ jobs:
     runs-on: ubuntu-latest
     environment: master
     steps:
+      - name: Print the job specific variables
+        run: |
+          workflow_concurrency_group=${{ github.workflow }}-${{ github.ref_name }}
+          echo "Workflow concurrency group $workflow_concurrency_group"
+          echo "Testing random secret"
+          echo "test"
+          echo "Some value"
       - name: Checkout code
         uses: actions/checkout@v2
       - name: Set up Java
