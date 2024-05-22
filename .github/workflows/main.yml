@@ -13,8 +13,6 @@ jobs:
     steps:
       - name: Print the job specific variables
         run: |
-          workflow_concurrency_group=${{ github.workflow }}-${{ github.ref_name }}
-          echo "Workflow concurrency group $workflow_concurrency_group"
           echo "Testing random secret"
           echo "test"
           echo "Some value"
