@@ -61,20 +61,20 @@ jobs:
           mkdir -p ~/.ssh
           echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
           chmod 600 ~/.ssh/id_rsa
-          ssh-keyscan 38.242.142.123 >> ~/.ssh/known_hosts
+          ssh-keyscan ${{secrets.SSH_HOST}} >> ~/.ssh/known_hosts
         env:
           SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
       - name: Deploy app.jar to server
         run: |
-          scp ./build/libs/app.jar pocketstats@38.242.142.123:/usr/lib/pocketstats/app.jar
+          scp ./build/libs/app.jar pocketstats@${{secrets.SSH_HOST}}:/usr/lib/pocketstats/app.jar
         env:
           SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
       - name: Run commands on server
         run: |
-          ssh pocketstats@38.242.142.123 'sudo systemctl stop pocketstats.service'
-          ssh pocketstats@38.242.142.123 'sudo systemctl daemon-reload'
-          ssh pocketstats@38.242.142.123 'sudo systemctl start pocketstats.service'
-          ssh pocketstats@38.242.142.123 'systemctl status pocketstats.service'
+          ssh pocketstats@${{secrets.SSH_HOST}} 'sudo systemctl stop pocketstats.service'
+          ssh pocketstats@${{secrets.SSH_HOST}} 'sudo systemctl daemon-reload'
+          ssh pocketstats@${{secrets.SSH_HOST}} 'sudo systemctl start pocketstats.service'
+          ssh pocketstats@${{secrets.SSH_HOST}} 'systemctl status pocketstats.service'
         env:
           SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
       - name: Health check
@@ -82,5 +82,5 @@ jobs:
           echo "Waiting for 30 seconds before healthcheck"
           sleep 30
           echo "Performing healthcheck..."
-          wget --retry-connrefused --waitretry=5 --read-timeout=20 --timeout=15 -t 10 http://38.242.142.123:8080/pocketstats/actuator/health -O /dev/null
+          wget --retry-connrefused --waitretry=5 --read-timeout=20 --timeout=15 -t 10 http://${{secrets.SSH_HOST}}:8080/pocketstats/actuator/health -O /dev/null
         shell: bash
