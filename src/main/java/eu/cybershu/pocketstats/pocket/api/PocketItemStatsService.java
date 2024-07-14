@@ -2,6 +2,7 @@ package eu.cybershu.pocketstats.pocket.api;
 
 import com.mongodb.client.AggregateIterable;
 import com.mongodb.client.MongoCollection;
+import eu.cybershu.pocketstats.db.ItemStatus;
 import eu.cybershu.pocketstats.events.UserSynchronizedItemsEvent;
 import eu.cybershu.pocketstats.stats.DayStat;
 import eu.cybershu.pocketstats.stats.DayStatsRecords;
@@ -244,16 +245,16 @@ public class PocketItemStatsService {
                         .append("count",
                                 new Document("$sum", 1L)))));
 
-        Map<ItemStatus, Long> itemStats = new HashMap<>();
+        Map<PocketItemStatus, Long> itemStats = new HashMap<>();
         for (Document docs : result) {
             String name = docs.getString("_id");
             long count = docs.getLong("count");
-            itemStats.put(ItemStatus.valueOf(name), count);
+            itemStats.put(PocketItemStatus.valueOf(name), count);
         }
 
         return new PeriodItemsStats(
-                itemStats.get(ItemStatus.TO_READ) + itemStats.get(ItemStatus.ARCHIVED),
-                itemStats.get(ItemStatus.ARCHIVED));
+                itemStats.get(PocketItemStatus.TO_READ) + itemStats.get(PocketItemStatus.ARCHIVED),
+                itemStats.get(PocketItemStatus.ARCHIVED));
     }
 
     private MongoCollection<Document> getPocketItemsCollection() {
@@ -313,7 +314,7 @@ public class PocketItemStatsService {
             match = new Document("$match",
                     new Document("status",
                             new Document("$exists", true)
-                                    .append("$ne", ItemStatus.DELETED)));
+                                    .append("$ne", PocketItemStatus.DELETED)));
         } else {
             match = new Document("$match",
                     new Document("status", itemStatus.name()));

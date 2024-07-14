@@ -175,3 +175,6 @@ src/.DS_Store
 src/main/.DS_Store
 src/main/raporting/.DS_Store
 !/.env
+
+.bin/
+node_modules

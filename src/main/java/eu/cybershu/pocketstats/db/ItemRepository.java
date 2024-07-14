@@ -6,6 +6,6 @@ import org.springframework.stereotype.Service;
 import java.util.Optional;
 
 @Service
-public interface PocketItemRepository extends MongoRepository<PocketItem, String> {
-    Optional<PocketItem> findById(String id);
+public interface ItemRepository extends MongoRepository<Item, String> {
+    Optional<Item> findById(String id);
 }

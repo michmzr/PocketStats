@@ -1,7 +1,8 @@
 package eu.cybershu.pocketstats.pocket.stats
 
-import eu.cybershu.pocketstats.db.PocketItem
-import eu.cybershu.pocketstats.db.PocketItemRepository
+
+import eu.cybershu.pocketstats.db.Item
+import eu.cybershu.pocketstats.db.ItemRepository
 import eu.cybershu.pocketstats.pocket.api.BaseTest
 import eu.cybershu.pocketstats.pocket.api.ItemsStatsAggregated
 import eu.cybershu.pocketstats.pocket.api.PocketItemStatsService
@@ -20,7 +21,7 @@ import spock.lang.Shared
 import java.time.*
 import java.time.temporal.ChronoUnit
 
-import static eu.cybershu.pocketstats.PocketItemBuilder.*
+import static eu.cybershu.pocketstats.ItemBuilder.*
 import static org.assertj.core.api.Assertions.assertThat
 
 @TestConfiguration
@@ -34,9 +35,9 @@ class TestConfig {
 @SpringBootTest
 @ContextConfiguration(classes = TestConfig.class)
 @AutoConfigureDataMongo
-class PocketItemStatsServiceIntTest extends BaseTest {
+class ItemStatsServiceIntTest extends BaseTest {
     @Autowired
-    private PocketItemRepository repository
+    private ItemRepository repository
 
     @Autowired
     private PocketItemStatsService statsService
@@ -90,7 +91,8 @@ class PocketItemStatsServiceIntTest extends BaseTest {
                 archived(now, TimeUtils.instantTodayEnd()),
         ])
 
-        assert repository.saveAll(items).size() == items.size()
+        def saved = repository.saveAll(items)
+        assert saved.size() == items.size()
 
         def start = LocalDate.now(clock).minusDays(7)
         def end = LocalDate.now(clock)
@@ -371,13 +373,13 @@ class PocketItemStatsServiceIntTest extends BaseTest {
         assertThat(stats.added()).isEqualTo(expectedAdded)
     }
 
-    private PocketItem hourAndDayArchivedItem(int hour, int weekday) {
+    private Item hourAndDayArchivedItem(int hour, int weekday) {
         def date = instantWithHourAndWeekday(hour, weekday)
         archived(date, date)
     }
 
 
-    private PocketItem hourAndDayAddedItem(int hour, int weekday) {
+    private Item hourAndDayAddedItem(int hour, int weekday) {
         def date = instantWithHourAndWeekday(hour, weekday)
         todo(date)
     }
@@ -391,7 +393,7 @@ class PocketItemStatsServiceIntTest extends BaseTest {
         modifiedDateTime.atZone(ZoneId.systemDefault()).toInstant()
     }
 
-    private PocketItem daysDiffAdded(int days) {
+    private Item daysDiffAdded(int days) {
         def timeAdded = instantDaysDiffers(days)
         String title = "read " + timeAdded
         String url = "http://local/random"
@@ -399,7 +401,7 @@ class PocketItemStatsServiceIntTest extends BaseTest {
         todo(timeAdded, title, url)
     }
 
-    private PocketItem daysDiffArchived(int days, Instant dayAdded) {
+    private Item daysDiffArchived(int days, Instant dayAdded) {
         def timeAdded = instantDaysDiffers(days)
         String title = "read " + timeAdded
         String url = "http://local/random"

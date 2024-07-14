@@ -27,10 +27,10 @@ import java.util.*;
 public class PocketApiService {
     private final HttpClient client;
     private final ObjectMapper mapper;
-    private final PocketItemRepository pocketItemRepository;
+    private final ItemRepository itemRepository;
     private final MigrationStatusRepository migrationStatusRepository;
     private final PocketAuthorizationService authorizationService;
-    private final PocketItemMapper pocketItemMapper;
+    private final ItemMapper itemMapper;
 
     private final EventsPublisher eventsPublisher;
 
@@ -39,7 +39,7 @@ public class PocketApiService {
     @Value("${auth.pocket.url.get}")
     private String pocketGetUrl;
 
-    public PocketApiService(PocketItemRepository pocketItemRepository,
+    public PocketApiService(ItemRepository itemRepository,
                             MigrationStatusRepository migrationStatusRepository,
                             PocketAuthorizationService authorizationService, EventsPublisher eventsPublisher) {
         this.migrationStatusRepository = migrationStatusRepository;
@@ -51,8 +51,8 @@ public class PocketApiService {
                 .connectTimeout(Duration.ofSeconds(20))
                 .build();
         this.mapper = new ObjectMapper();
-        this.pocketItemMapper = PocketItemMapper.INSTANCE;
-        this.pocketItemRepository = pocketItemRepository;
+        this.itemMapper = ItemMapper.INSTANCE;
+        this.itemRepository = itemRepository;
     }
 
     public SyncStatus importFromSinceLastUpdate() throws IOException, InterruptedException {
@@ -88,19 +88,19 @@ public class PocketApiService {
                 .items()
                 .values()
                 .stream()
-                .map(pocketItemMapper::apiToEntity)
+                .map(itemMapper::apiToEntity)
                 .toList();
 
-        List<PocketItem> pocketItems = pocketItemRepository.saveAll(models);
+        List<Item> items = itemRepository.saveAll(models);
 
         MigrationStatus migrationStatus = new MigrationStatus();
         migrationStatus.id(UUID.randomUUID()
                                .toString());
         migrationStatus.date(Instant.now());
-        migrationStatus.migratedItems(pocketItems.size());
+        migrationStatus.migratedItems(items.size());
         migrationStatusRepository.save(migrationStatus);
 
-        return pocketItems.size();
+        return items.size();
     }
 
     public int importAll() throws IOException, InterruptedException {
@@ -110,7 +110,7 @@ public class PocketApiService {
         final var count = 300;
         int gotItems = 0;
 
-        List<PocketItem> importedItems = new LinkedList<>();
+        List<Item> importedItems = new LinkedList<>();
         while (true) {
             log.debug("offset:{}, count:{}", offset, count);
 
@@ -131,13 +131,13 @@ public class PocketApiService {
             var models = pocketResponse.items()
                                        .values()
                                        .stream()
-                                       .map(pocketItemMapper::apiToEntity)
+                    .map(itemMapper::apiToEntity)
                                        .toList();
             importedItems.addAll(models);
 
             gotItems += items.size();
 
-            pocketItemRepository.saveAll(importedItems);
+            itemRepository.saveAll(importedItems);
 
             offset += count;
         }

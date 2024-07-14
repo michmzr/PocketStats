@@ -15,7 +15,7 @@ import java.util.Map;
 public record ListItem(@JsonProperty("item_id") String id, @JsonProperty("resolved_id") String resolvedId,
                        @JsonProperty("given_url") String url, @JsonProperty("given_title") String title,
                        @JsonDeserialize(converter = StringBooleanToBoolean.class) @JsonProperty("favorite") Boolean favorite,
-                       @JsonProperty("status") ItemStatus status,
+                       @JsonProperty("status") PocketItemStatus status,
                        @JsonProperty("time_added") @JsonDeserialize(converter = LongToInstantConverter.class) Instant timeAdded,
                        @JsonProperty("time_updated") @JsonDeserialize(converter = LongToInstantConverter.class) Instant timeUpdated,
                        @JsonDeserialize(converter = LongToInstantConverter.class) @JsonProperty("time_read") Instant timeRead,

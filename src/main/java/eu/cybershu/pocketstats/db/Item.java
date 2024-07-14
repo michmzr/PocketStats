@@ -1,7 +1,6 @@
 package eu.cybershu.pocketstats.db;
 
 import eu.cybershu.pocketstats.pocket.api.DomainMetadata;
-import eu.cybershu.pocketstats.pocket.api.ItemStatus;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
@@ -14,7 +13,7 @@ import java.util.List;
 @Data
 @NoArgsConstructor
 @EqualsAndHashCode(of = {"id", "url", "title", "status", "timeAdded", "timeRead"})
-public class PocketItem {
+public class Item {
     @Id
     private String id;
     private String url;
@@ -33,4 +32,10 @@ public class PocketItem {
     private String lang;
     private DomainMetadata domainMetadata;
     private List<String> tags;
+
+    /**
+     * article, email, document...
+     **/
+    private String category; // todo as a enum
+    private Source source;
 }
