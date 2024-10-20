@@ -1,9 +1,11 @@
 package eu.cybershu.pocketstats.reader.api
 
+import org.springframework.context.annotation.EnableAspectJAutoProxy
 import spock.lang.Specification
 
 import java.time.*
 
+@EnableAspectJAutoProxy
 class ReaderApiServiceTest extends Specification {
     private String accessToken
 
@@ -15,7 +17,7 @@ class ReaderApiServiceTest extends Specification {
 
     def "test connection"() {
         given:
-        Instant readFrom = instantFrom("2023-03-28", "01:00:00")
+        Instant readFrom = instantFrom("2024-09-28", "01:00:00")
 
         when:
         def response = readerApiService.fetchList(accessToken,
