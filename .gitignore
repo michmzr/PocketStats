@@ -164,6 +164,9 @@ pocket-creds.json
 #Python
 venv
 
+.bin
+.vscode
+
 # Frontend
 ./src/frontend/node_modules
 
@@ -176,5 +179,5 @@ src/main/.DS_Store
 src/main/raporting/.DS_Store
 !/.env
 
-.bin/
+bin
 node_modules

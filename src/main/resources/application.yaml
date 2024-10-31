@@ -14,11 +14,8 @@ auth:
     consumer-key: ${POCKET_CONSUMER_KEY}
     redirect_uri: ${VUE_APP_BACKEND_URL:http://localhost:8081}/pocket/auth/token
 
-management:
-  endpoints:
-    web:
-      exposure:
-        include: [ 'configprops', 'mappings', 'health', 'info', 'logfile', 'loggers', 'endpoints' ]
+management.endpoints.enabled-by-default: false
+
 server:
   port: ${PORT:8081}
   error:
