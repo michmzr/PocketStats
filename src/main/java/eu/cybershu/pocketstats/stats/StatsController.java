@@ -3,7 +3,7 @@ package eu.cybershu.pocketstats.stats;
 import eu.cybershu.pocketstats.api.ApiResponse;
 import eu.cybershu.pocketstats.pocket.api.ActivityHeatmapStats;
 import eu.cybershu.pocketstats.pocket.api.ItemsStatsAggregated;
-import eu.cybershu.pocketstats.pocket.api.PocketItemStatsService;
+import eu.cybershu.pocketstats.pocket.api.ItemsStatsService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.*;
@@ -14,9 +14,9 @@ import java.util.List;
 @RestController
 @RequestMapping("/stats")
 public class StatsController {
-    private final PocketItemStatsService statsService;
+    private final ItemsStatsService statsService;
 
-    public StatsController(PocketItemStatsService statsService) {
+    public StatsController(ItemsStatsService statsService) {
         this.statsService = statsService;
     }
 

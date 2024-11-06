@@ -31,12 +31,12 @@ import java.util.concurrent.ExecutionException;
 
 @Slf4j
 @Service
-public class PocketItemStatsService {
+public class ItemsStatsService {
     private final MongoTemplate mongoTemplate;
 
     private final Clock clock;
 
-    public PocketItemStatsService(
+    public ItemsStatsService(
             Clock clock,
             MongoTemplate mongoTemplate
     ) {

@@ -31,10 +31,6 @@ class ReaderApiServiceTest extends Specification {
         response.size() > 0
     }
 
-    Instant instantFromLocalDateTime(LocalDateTime localDateTime) {
-        return localDateTime.atZone(ZoneId.systemDefault()).toInstant()
-    }
-
     Instant instantFrom(String strDate, String strTime) {
         var ldt = LocalDateTime.of(LocalDate.parse(strDate), LocalTime.parse(strTime))
         return ldt.toInstant(ZoneId.systemDefault().rules.getOffset(ldt))

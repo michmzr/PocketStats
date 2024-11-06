@@ -2,12 +2,11 @@ package eu.cybershu.pocketstats.pocket;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import eu.cybershu.pocketstats.db.*;
-import eu.cybershu.pocketstats.events.EventsPublisher;
+import eu.cybershu.pocketstats.db.Item;
+import eu.cybershu.pocketstats.db.PocketItemToDbItemMapper;
 import eu.cybershu.pocketstats.pocket.api.ApiXHeaders;
 import eu.cybershu.pocketstats.pocket.api.ListItem;
 import eu.cybershu.pocketstats.pocket.api.PocketGetResponse;
-import eu.cybershu.pocketstats.sync.SyncStatus;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
@@ -20,90 +19,47 @@ import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.time.Duration;
 import java.time.Instant;
-import java.util.*;
+import java.util.HashMap;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
 
 @Slf4j
 @Service
 public class PocketApiService {
     private final HttpClient client;
     private final ObjectMapper mapper;
-    private final ItemRepository itemRepository;
-    private final MigrationStatusRepository migrationStatusRepository;
     private final PocketAuthorizationService authorizationService;
-    private final ItemMapper itemMapper;
-
-    private final EventsPublisher eventsPublisher;
+    private final PocketItemToDbItemMapper itemMapper;
 
     @Value("${auth.pocket.consumer-key}")
     private String pocketConsumerKey;
     @Value("${auth.pocket.url.get}")
     private String pocketGetUrl;
 
-    public PocketApiService(ItemRepository itemRepository,
-                            MigrationStatusRepository migrationStatusRepository,
-                            PocketAuthorizationService authorizationService, EventsPublisher eventsPublisher) {
-        this.migrationStatusRepository = migrationStatusRepository;
+    public PocketApiService(PocketAuthorizationService authorizationService) {
         this.authorizationService = authorizationService;
-        this.eventsPublisher = eventsPublisher;
         this.client = HttpClient
                 .newBuilder()
                 .followRedirects(HttpClient.Redirect.NORMAL)
                 .connectTimeout(Duration.ofSeconds(20))
                 .build();
         this.mapper = new ObjectMapper();
-        this.itemMapper = ItemMapper.INSTANCE;
-        this.itemRepository = itemRepository;
+        this.itemMapper = PocketItemToDbItemMapper.INSTANCE;
     }
 
-    public SyncStatus importFromSinceLastUpdate() throws IOException, InterruptedException {
-        MigrationStatus status = lastMigration();
-
-        log.debug("import from last - status={}", status);
-
-        int items;
-        if (status == null) {
-            log.warn("No import was done. Importing all items");
-            items =  importAll();
-        } else {
-            items = importAllToDbSince(status.date());
-        }
-
-        SyncStatus syncStatus = new SyncStatus(
-                Instant.now(),
-                items
-        );
-        eventsPublisher.sendUserSynchronizedItems(syncStatus);
-
-        return syncStatus;
-    }
-
-    public MigrationStatus lastMigration() {
-        return migrationStatusRepository.findTopByOrderByDateDesc();
-    }
-
-    public Integer importAllToDbSince(Instant sinceWhen) throws IOException, InterruptedException {
+    public List<Item> importAllSinceWhen(Instant sinceWhen) throws IOException, InterruptedException {
         var pocketResponse = sinceWhen(sinceWhen);
 
-        var models = pocketResponse
+        return pocketResponse
                 .items()
                 .values()
                 .stream()
                 .map(itemMapper::apiToEntity)
                 .toList();
-
-        List<Item> items = itemRepository.saveAll(models);
-
-        MigrationStatus migrationStatus = new MigrationStatus();
-        migrationStatus.id(UUID.randomUUID()
-                               .toString());
-        migrationStatus.date(Instant.now());
-        migrationStatus.migratedItems(items.size());
-        migrationStatusRepository.save(migrationStatus);
-
-        return items.size();
     }
 
-    public int importAll() throws IOException, InterruptedException {
+    public List<Item> importAll() throws IOException, InterruptedException {
         log.info("Importing all items from GetPocket");
 
         int offset = 0;
@@ -122,6 +78,7 @@ public class PocketApiService {
                             "detailType", "complete"));
 
             Map<String, ListItem> items = pocketResponse.items();
+
             log.info("Got {} items", items.size());
             log.debug("response: {}", pocketResponse);
 
@@ -135,21 +92,10 @@ public class PocketApiService {
                                        .toList();
             importedItems.addAll(models);
 
-            gotItems += items.size();
-
-            itemRepository.saveAll(importedItems);
-
             offset += count;
         }
 
-        MigrationStatus migrationStatus = new MigrationStatus();
-        migrationStatus.id(UUID.randomUUID()
-                               .toString());
-        migrationStatus.date(Instant.now());
-        migrationStatus.migratedItems(gotItems);
-        migrationStatusRepository.save(migrationStatus);
-
-        return gotItems;
+        return importedItems;
     }
 
     public PocketGetResponse sinceWhen(Instant sinceWhen) throws IOException, InterruptedException {

@@ -93,22 +93,29 @@ tasks.named('test') {
     useJUnitPlatform()
 }
 
-//jacocoTestReport {
-//    reports {
-//        xml.required = false
-//        csv.required = false
-//        html.outputLocation = layout.buildDirectory.dir('jacocoHtml')
-//    }
-//}
-
-task stage(dependsOn: ['build', 'clean'])
-build.mustRunAfter clean
-task copyToLib(type: Copy) {
-    into "$buildDir/libs"
+// Task to handle frontend dependencies and build
+task npmInstall(type: Exec) {
+    enabled = !gradle.startParameter.taskNames.any { it.contains('test') }
+    workingDir './src/frontend/'
+    commandLine 'npm', 'install'
 }
-stage.dependsOn(copyToLib)
+
+task vueBuild(type: Exec) {
+    enabled = !gradle.startParameter.taskNames.any { it.contains('test') }
+    dependsOn 'npmInstall'
+    workingDir './src/frontend/'
+    commandLine 'npm', 'exec', 'vue-cli-service', 'build'
+}
+
+task copyFrontendToBuild(type: Copy) {
+    enabled = !gradle.startParameter.taskNames.any { it.contains('test') }
+    dependsOn 'vueBuild'
+    from "$projectDir/src/frontend/dist/"
+    into "$buildDir/resources/main/static"
+}
 
 processResources {
+    enabled = !gradle.startParameter.taskNames.any { it.contains('test') }
     dependsOn 'copyFrontendToBuild'
 }
 
@@ -116,19 +123,9 @@ bootJar {
     archiveFileName = "app.jar"
 }
 
-task npmInstall(type: Exec) {
-    workingDir './src/frontend/'
-    commandLine 'npm', 'install'
+task stage(dependsOn: ['build', 'clean'])
+build.mustRunAfter clean
+task copyToLib(type: Copy) {
+    into "$buildDir/libs"
 }
-
-task vueBuild(type: Exec) {
-    dependsOn 'npmInstall'
-    workingDir './src/frontend/'
-    commandLine 'npm', 'exec', 'vue-cli-service', 'build'
-}
-
-task copyFrontendToBuild(type: Copy) {
-    dependsOn 'vueBuild'
-    from "$projectDir/src/frontend/dist/"
-    into "$buildDir/resources/main/static"
-}
+stage.dependsOn(copyToLib)

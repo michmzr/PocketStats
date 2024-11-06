@@ -2,6 +2,8 @@ package eu.cybershu.pocketstats.reader.api;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import eu.cybershu.pocketstats.api.TooManyRequestsException;
+import eu.cybershu.pocketstats.db.Item;
+import eu.cybershu.pocketstats.reader.ReaderItemToDbItemMapper;
 import io.github.resilience4j.ratelimiter.annotation.RateLimiter;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
@@ -28,13 +30,14 @@ public class ReaderApiService {
     private static final Integer READER_MAX_RETRIES = 3;
     private final String readewiseReaderListUrl = "https://readwise.io/api/v3/list/?";
 
+    private final ReaderItemToDbItemMapper itemMapper;
     private final HttpClient client;
-
     private final ObjectMapper mapper;
 
     private Integer retryAfter;
 
     public ReaderApiService() {
+        this.itemMapper = ReaderItemToDbItemMapper.INSTANCE;
         this.client = HttpClient
                 .newBuilder()
                 .followRedirects(HttpClient.Redirect.NORMAL)
@@ -47,10 +50,22 @@ public class ReaderApiService {
 //
     }
 
-    private void updateAfter(Integer updateAfter) {
-        synchronized (this.retryAfter) {
-            retryAfter = updateAfter;
-        }
+    private synchronized void updateAfter(Integer updateAfter) {
+        retryAfter = updateAfter;
+    }
+
+    public List<Item> importAll(String accessToken, ReadwiseFetchParams params) throws IOException, InterruptedException {
+        log.info("Fetching Readwise list with params: {}", params);
+
+        List<ReaderItem> items = new LinkedList<>();
+        ReadwiseFetchPaginationParams pageParams = ReadwiseFetchPaginationParams
+                .builder()
+                .category(params.category())
+                .location(params.location())
+                .pageCursor(null)
+                .build();
+
+        return getItems(accessToken, params, pageParams, items);
     }
 
     /**
@@ -62,7 +77,7 @@ public class ReaderApiService {
      * pageCursor	string	A string returned by a previous request to this endpoint. Use it to get the next page of documents if there are too many for one request.	no
      */
     @RateLimiter(name = "readwise-api")
-    public List<ReaderItem> fetchList(String accessToken, ReadwiseFetchParams params)
+    public List<Item> fetchList(String accessToken, ReadwiseFetchParams params)
             throws IOException, InterruptedException {
         log.info("Fetching Readwise list with params: {}", params);
 
@@ -75,6 +90,10 @@ public class ReaderApiService {
                 .pageCursor(null)
                 .build();
 
+        return getItems(accessToken, params, pageParams, items);
+    }
+
+    private List<Item> getItems(String accessToken, ReadwiseFetchParams params, ReadwiseFetchPaginationParams pageParams, List<ReaderItem> items) throws IOException, InterruptedException {
         do {
             ReaderListResponse response = null;
             Integer retried = 0;
@@ -82,6 +101,8 @@ public class ReaderApiService {
             do {
                 try {
                     response = fetchPage(accessToken, pageParams);
+
+                    break;
                 } catch (TooManyRequestsException e) {
                     log.debug("Catched too may request exception: {}, retry {}", e.retryAfter() + 1, ++retried);
 
@@ -104,11 +125,15 @@ public class ReaderApiService {
                     .build();
         } while (pageParams.pageCursor() != null);
 
-        return items;
+        return items
+                .stream()
+                .map(this.itemMapper::apiToEntity)
+                .toList();
     }
 
     @RateLimiter(name = "readwise-api")
-    private ReaderListResponse fetchPage(String accessToken, ReadwiseFetchPaginationParams params) throws IOException, InterruptedException, TooManyRequestsException {
+    private ReaderListResponse fetchPage(String accessToken, ReadwiseFetchPaginationParams params)
+            throws IOException, InterruptedException, TooManyRequestsException {
         log.info("Fetching Readwise page with params: {}", params);
 
         String url = readewiseReaderListUrl + params.toQueryParams();

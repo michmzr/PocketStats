@@ -4,6 +4,7 @@ import java.time.Instant;
 
 public record SyncStatus(
         Instant date,
-        Integer records
+        Integer records,
+        Boolean success
 ) {
 }

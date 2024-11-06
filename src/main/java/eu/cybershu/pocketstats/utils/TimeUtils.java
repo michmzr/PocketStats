@@ -55,4 +55,9 @@ public class TimeUtils {
         LocalDateTime dateTime = LocalDateTime.of(date, LocalTime.of(23, 59, 59));
         return dateTime.atZone(defaultTimeZone()).toInstant();
     }
+
+    public static Instant instantFrom(String strDate, String strTime) {
+        var ldt = LocalDateTime.of(LocalDate.parse(strDate), LocalTime.parse(strTime));
+        return ldt.toInstant(ZoneId.systemDefault().getRules().getOffset(ldt));
+    }
 }

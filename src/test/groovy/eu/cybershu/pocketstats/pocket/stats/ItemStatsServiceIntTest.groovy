@@ -5,7 +5,7 @@ import eu.cybershu.pocketstats.db.Item
 import eu.cybershu.pocketstats.db.ItemRepository
 import eu.cybershu.pocketstats.pocket.api.BaseTest
 import eu.cybershu.pocketstats.pocket.api.ItemsStatsAggregated
-import eu.cybershu.pocketstats.pocket.api.PocketItemStatsService
+import eu.cybershu.pocketstats.pocket.api.ItemsStatsService
 import eu.cybershu.pocketstats.stats.DayStatsRecords
 import eu.cybershu.pocketstats.stats.StatsWithStatusType
 import eu.cybershu.pocketstats.utils.TimePeriod
@@ -40,7 +40,7 @@ class ItemStatsServiceIntTest extends BaseTest {
     private ItemRepository repository
 
     @Autowired
-    private PocketItemStatsService statsService
+    private ItemsStatsService statsService
 
     @Shared
     private ZoneId timeZone = ZoneId.of("UTC")

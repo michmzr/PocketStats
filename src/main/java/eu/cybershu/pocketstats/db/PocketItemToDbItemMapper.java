@@ -11,15 +11,15 @@ import java.util.List;
 import java.util.Map;
 
 @Mapper(componentModel = "spring")
-public interface ItemMapper {
-    ItemMapper INSTANCE = Mappers.getMapper(ItemMapper.class);
+public interface PocketItemToDbItemMapper {
+    PocketItemToDbItemMapper INSTANCE = Mappers.getMapper(PocketItemToDbItemMapper.class);
 
     static List<String> mapTags(Map<String, Tag> tags) {
         if (tags == null || tags.isEmpty()) return Collections.emptyList();
         else return tags.keySet().stream().toList();
     }
 
-    @Mapping(target = "category", constant = "article")
+    //@Mapping(target = "category", constant = "article")
     @Mapping(target = "source", constant = "POCKET")
     Item apiToEntity(ListItem item);
 }
