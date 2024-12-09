@@ -177,7 +177,6 @@ src/main/java/eu/cybershu/pocketstats/pocket/api/.DS_Store
 src/.DS_Store
 src/main/.DS_Store
 src/main/raporting/.DS_Store
-!/.env
 
 bin
-node_modules
+node_modules!/src/main/docker/docker/

@@ -165,12 +165,12 @@ public class ApiMigrationService {
 
     public Optional<Instant> lastMigrationDate(Source source) {
         return migrationStatusRepository
-                .findBySourceAndOrderByDateDesc(source)
+                .findBySourceOrderByDateDesc(source)
                 .map(it -> it.date());
     }
 
     public Optional<MigrationStatus> lastMigration(Source source) {
         return migrationStatusRepository
-                .findBySourceAndOrderByDateDesc(source);
+                .findBySourceOrderByDateDesc(source);
     }
 }

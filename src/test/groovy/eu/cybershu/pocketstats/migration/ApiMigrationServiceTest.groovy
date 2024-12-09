@@ -115,7 +115,7 @@ class ApiMigrationServiceTest extends Specification {
         def result = migrationService.lastMigration(source)
 
         then:
-        1 * migrationStatusRepository.findBySourceAndOrderByDateDesc(source) >> Optional.of(expectedStatus)
+        1 * migrationStatusRepository.findBySourceOrderByDateDesc(source) >> Optional.of(expectedStatus)
         result.isPresent()
         with(result.get()) {
             it.date == expectedStatus.date
@@ -154,8 +154,8 @@ class ApiMigrationServiceTest extends Specification {
         def result = migrationService.importAllFromSinceLastUpdate()
 
         then:
-        1 * migrationStatusRepository.findBySourceAndOrderByDateDesc(Source.POCKET) >> Optional.of(pkLastMigration)
-        1 * migrationStatusRepository.findBySourceAndOrderByDateDesc(Source.READER) >> Optional.of(readerLastMigration)
+        1 * migrationStatusRepository.findBySourceOrderByDateDesc(Source.POCKET) >> Optional.of(pkLastMigration)
+        1 * migrationStatusRepository.findBySourceOrderByDateDesc(Source.READER) >> Optional.of(readerLastMigration)
 
         1 * pocketApiService.importAllSinceWhen(pkLastMigration.date()) >> [pocketItem]
         1 * readerApiService.importAllSinceWhen(_, readerLastMigration.date()) >> [readerItem]

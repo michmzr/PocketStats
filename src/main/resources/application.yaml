@@ -32,6 +32,7 @@ spring:
   jackson:
     serialization:
       WRITE_DATES_AS_TIMESTAMPS: false
+
   datasource.driver-class-name: com.mysql.jdbc.Driver
   data:
     mongodb:
