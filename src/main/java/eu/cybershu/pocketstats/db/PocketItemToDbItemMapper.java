@@ -19,7 +19,7 @@ public interface PocketItemToDbItemMapper {
         else return tags.keySet().stream().toList();
     }
 
-    //@Mapping(target = "category", constant = "article")
+    @Mapping(target = "category", constant = "article")
     @Mapping(target = "source", constant = "POCKET")
     Item apiToEntity(ListItem item);
 }

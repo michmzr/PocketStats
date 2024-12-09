@@ -17,10 +17,10 @@ class ReaderApiServiceTest extends Specification {
 
     def "test connection"() {
         given:
-        Instant readFrom = instantFrom("2024-09-28", "01:00:00")
+        Instant readFrom = instantFrom("2024-10-28", "01:00:00")
 
         when:
-        def response = readerApiService.fetchList(accessToken,
+        def response = readerApiService.fetch(accessToken,
                ReadwiseFetchParams
                        .builder()
                        .updatedAfter(readFrom)

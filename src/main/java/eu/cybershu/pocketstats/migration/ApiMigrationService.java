@@ -91,22 +91,24 @@ public class ApiMigrationService {
         return completeMigration(source, importedItems);
     }
 
-    @SneakyThrows // todo fix, obsluga wyjatkow
+    @SneakyThrows
     public SyncStatus migrateSource(Source source, Instant sinceWhen) {
         log.info("Migrating pocket stats from {} to {}", source, sinceWhen);
 
-        List<Item> importedItems = new LinkedList<>();
+        List<Item> importedItems  = new LinkedList<>();
         if (Objects.requireNonNull(source) == Source.POCKET) {
             importedItems = migrateFromPocket(Optional.of(sinceWhen));
         } else if (source == Source.READER) {
             importedItems = migrateFromReader(Optional.of(sinceWhen));
+        } else {
+            throw new IllegalArgumentException("Unknown source " + source);
         }
 
         return completeMigration(source, importedItems);
     }
 
     private SyncStatus completeMigration(Source source, List<Item> importedItems) {
-        log.info("Got {} imported items from {}", importedItems.size(), source);
+        log.info("Compliting migration - got {} items from '{}'", importedItems.size(), source);
 
         updateDB(source, importedItems);
 
@@ -122,7 +124,7 @@ public class ApiMigrationService {
     }
 
     private List<Item> migrateFromPocket(Optional<Instant> sinceWhen) throws IOException, InterruptedException {
-        log.info("Using pocket for migration - sing when {}", sinceWhen);
+        log.info("Using pocket for migration - when {}", sinceWhen);
 
         if (sinceWhen.isPresent()) {
             return pocketApiService.importAllSinceWhen(sinceWhen.get());
@@ -132,27 +134,16 @@ public class ApiMigrationService {
     }
 
     private List<Item> migrateFromReader(Optional<Instant> sinceWhen) throws IOException, InterruptedException {
-        log.info("Using reader for migration - sing when {}", sinceWhen);
+        log.info("Using reader for migration - when {}", sinceWhen);
 
         String accessToken = System.getenv("READER_ACCESS_TOKEN");
 
-        ReadwiseFetchParams queryParams;
         if (sinceWhen.isPresent()) {
-            queryParams = ReadwiseFetchParams
-                    .builder()
-                    .updatedAfter(sinceWhen.get())
-                    .build();
+            return readerApiService.importAllSinceWhen(accessToken, sinceWhen.get());
         } else {
-            queryParams = ReadwiseFetchParams
-                    .builder()
-                    .build();
+            return readerApiService.importAll(accessToken);
         }
-
-        return readerApiService.fetchList(accessToken,
-                queryParams
-        );
     }
-
 
     private void updateDB(Source source, List<Item> importedItems) {
 

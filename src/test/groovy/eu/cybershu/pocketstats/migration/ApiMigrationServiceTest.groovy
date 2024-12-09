@@ -55,8 +55,9 @@ class ApiMigrationServiceTest extends Specification {
     }
 
     def "given READER and set time Expect reader api will be running and db actions updated"() {
-        given:
+        setup:
         Instant sinceWhen = TimeUtils.instantFrom("2024-09-28", "01:00:00")
+
         Source source = Source.READER
         def expectedItem = new Item()
         def savedStatus = new MigrationStatus(
@@ -69,7 +70,7 @@ class ApiMigrationServiceTest extends Specification {
         def result = migrationService.migrateSource(source, sinceWhen)
 
         then:
-        1 * readerApiService.importAllSinceWhen(sinceWhen) >> [expectedItem]
+        readerApiService.importAllSinceWhen(_, _) >> {[expectedItem]}
         1 * itemRepository.saveAll([expectedItem])
         1 * eventsPublisher.sendUserSynchronizedItems(_)
         1 * migrationStatusRepository.save(_ as MigrationStatus) >> savedStatus
@@ -78,7 +79,7 @@ class ApiMigrationServiceTest extends Specification {
         result.success
     }
 
-    def "given no items imported Expect empty migration status"() {
+    def "given no POCKET items imported Expect empty migration status"() {
         given:
         Instant sinceWhen = TimeUtils.instantFrom("2024-09-28", "01:00:00")
         Source source = Source.POCKET
@@ -92,8 +93,8 @@ class ApiMigrationServiceTest extends Specification {
         def result = migrationService.migrateSource(source, sinceWhen)
 
         then:
-        1 * pocketApiService.importAllSinceWhen(sinceWhen) >> []
-        1 * itemRepository.saveAll([])
+        1 * pocketApiService.importAllSinceWhen(sinceWhen) >> {[]}
+        0 * itemRepository.saveAll([])
         1 * eventsPublisher.sendUserSynchronizedItems({ it.records == 0 })
         1 * migrationStatusRepository.save(_ as MigrationStatus) >> savedStatus
 
@@ -126,15 +127,24 @@ class ApiMigrationServiceTest extends Specification {
         source << [Source.POCKET, Source.READER]
     }
 
-    def "importAllFromSinceLastUpdate should use last migration date"() {
+    def "importAllFromSinceLastUpdate should use last POCKET migration date"() {
         given:
-        def lastMigration = new MigrationStatus(
-                date: TimeUtils.instantFrom("2024-09-28", "01:00:00"),
+        def pkLastMigration = new MigrationStatus(
+                date: TimeUtils.instantFrom("2024-09-28", "02:00:00"),
                 migratedItems: 10,
                 source: Source.POCKET
         )
-        def expectedItem = new Item()
-        def savedStatus = new MigrationStatus(
+
+        def readerLastMigration = new MigrationStatus(
+                date: TimeUtils.instantFrom("2024-09-30", "01:00:00"),
+                migratedItems: 2,
+                source: Source.READER
+        )
+
+        def pocketItem = new Item(id: 123, title: "Pocket Item")
+        def readerItem = new Item(id: 456, title: "Reader Item")
+
+        def pkStatus = new MigrationStatus(
                 source: Source.POCKET,
                 migratedItems: 1,
                 date: Instant.now()
@@ -144,16 +154,22 @@ class ApiMigrationServiceTest extends Specification {
         def result = migrationService.importAllFromSinceLastUpdate()
 
         then:
-        1 * migrationStatusRepository.findBySourceAndOrderByDateDesc(Source.POCKET) >> Optional.of(lastMigration)
-        1 * migrationStatusRepository.findBySourceAndOrderByDateDesc(Source.READER) >> Optional.empty()
-        1 * pocketApiService.importAllSinceWhen(lastMigration.date) >> [expectedItem]
-        1 * readerApiService.importAll() >> []
-        1 * itemRepository.saveAll([expectedItem])
-        1 * itemRepository.saveAll([])
-        2 * eventsPublisher.sendUserSynchronizedItems(_)
-        2 * migrationStatusRepository.save(_ as MigrationStatus) >> savedStatus
+        1 * migrationStatusRepository.findBySourceAndOrderByDateDesc(Source.POCKET) >> Optional.of(pkLastMigration)
+        1 * migrationStatusRepository.findBySourceAndOrderByDateDesc(Source.READER) >> Optional.of(readerLastMigration)
 
-        result.records == 1
+        1 * pocketApiService.importAllSinceWhen(pkLastMigration.date()) >> [pocketItem]
+        1 * readerApiService.importAllSinceWhen(_, readerLastMigration.date()) >> [readerItem]
+
+        1 * itemRepository.saveAll({it.size() == 1})
+        1 * migrationStatusRepository.save({ it.source == Source.POCKET && it.migratedItems==1 }) >> pkStatus
+
+
+        1 * itemRepository.saveAll({it.size() == 1})
+        1 * migrationStatusRepository.save({ it.source == Source.READER && it.migratedItems==1 })
+
+        2 * eventsPublisher.sendUserSynchronizedItems(_)
+
+        result.records == 2
         result.success
     }
 

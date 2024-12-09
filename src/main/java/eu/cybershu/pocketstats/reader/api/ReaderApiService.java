@@ -16,8 +16,10 @@ import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.text.MessageFormat;
 import java.time.Duration;
+import java.time.Instant;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Optional;
 
 import static java.lang.Thread.sleep;
 
@@ -54,19 +56,53 @@ public class ReaderApiService {
         retryAfter = updateAfter;
     }
 
-    public List<Item> importAll(String accessToken, ReadwiseFetchParams params) throws IOException, InterruptedException {
+    public List<Item> importCustom(String accessToken, ReadwiseFetchParams params, Optional<Instant> sinceWhen)
+            throws IOException, InterruptedException {
         log.info("Fetching Readwise list with params: {}", params);
 
         List<ReaderItem> items = new LinkedList<>();
-        ReadwiseFetchPaginationParams pageParams = ReadwiseFetchPaginationParams
-                .builder()
-                .category(params.category())
-                .location(params.location())
-                .pageCursor(null)
-                .build();
+        ReadwiseFetchPaginationParams pageParams;
+        if(sinceWhen.isPresent()) {
+            pageParams = ReadwiseFetchPaginationParams
+                    .builder()
+                    .updatedAfter(sinceWhen.get())
+                    .category(params.category())
+                    .location(params.location())
+                    .pageCursor(null)
+                    .build();
+        } else {
+             pageParams = ReadwiseFetchPaginationParams
+                    .builder()
+                    .category(params.category())
+                    .location(params.location())
+                    .pageCursor(null)
+                    .build();
+        }
 
         return getItems(accessToken, params, pageParams, items);
     }
+
+    public List<Item> importAllSinceWhen(String accessToken, Instant sinceWhen) throws IOException, InterruptedException {
+        log.info("Importing all items from Readwise since {}", sinceWhen);
+
+        ReadwiseFetchParams queryParams = ReadwiseFetchParams
+                .builder()
+                .updatedAfter(sinceWhen)
+                .build();
+
+        return fetch(accessToken, queryParams);
+    }
+
+    public List<Item> importAll(String accessToken) throws IOException, InterruptedException {
+        log.info("Importing all items...");
+
+        ReadwiseFetchParams queryParams = ReadwiseFetchParams
+                .builder()
+                .build();
+
+        return fetch(accessToken, queryParams);
+    }
+
 
     /**
      * Key	Type	Description	Required
@@ -77,7 +113,7 @@ public class ReaderApiService {
      * pageCursor	string	A string returned by a previous request to this endpoint. Use it to get the next page of documents if there are too many for one request.	no
      */
     @RateLimiter(name = "readwise-api")
-    public List<Item> fetchList(String accessToken, ReadwiseFetchParams params)
+    public List<Item> fetch(String accessToken, ReadwiseFetchParams params)
             throws IOException, InterruptedException {
         log.info("Fetching Readwise list with params: {}", params);
 
@@ -93,7 +129,9 @@ public class ReaderApiService {
         return getItems(accessToken, params, pageParams, items);
     }
 
-    private List<Item> getItems(String accessToken, ReadwiseFetchParams params, ReadwiseFetchPaginationParams pageParams, List<ReaderItem> items) throws IOException, InterruptedException {
+    private List<Item> getItems(String accessToken, ReadwiseFetchParams params,
+                                ReadwiseFetchPaginationParams pageParams, List<ReaderItem> items)
+            throws IOException, InterruptedException {
         do {
             ReaderListResponse response = null;
             Integer retried = 0;
