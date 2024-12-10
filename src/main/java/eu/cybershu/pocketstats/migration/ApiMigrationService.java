@@ -36,6 +36,35 @@ public class ApiMigrationService {
         this.eventsPublisher = eventsPublisher;
     }
 
+    public SyncStatus importAllFromSinceLastUpdate(Source source) {
+        log.info("Migrating ALL sources from last sync for {}", source);
+
+        CompletableFuture<SyncStatus> syncFuture;
+        if(source.equals(Source.POCKET)){
+            syncFuture = CompletableFuture.supplyAsync(() -> syncSource(Source.POCKET));
+        } else if(source.equals(Source.READER)){
+            syncFuture = CompletableFuture.supplyAsync(() -> syncSource(Source.READER));
+        } else {
+            throw new IllegalArgumentException("Unknown source " + source);
+        }
+
+        CompletableFuture.allOf(syncFuture).join();
+
+        try {
+            SyncStatus syncStatus = syncFuture.get();
+
+            log.info("{} migration result: {}", source, source);
+
+            return new SyncStatus(Instant.now(),
+                    syncStatus.records(),
+                    true);
+        } catch (InterruptedException | ExecutionException e) {
+            log.error("Error getting parallelized results", e);
+
+            throw new RuntimeException("Error getting parallelized results", e);
+        }
+    }
+
     public SyncStatus importAllFromSinceLastUpdate() {
         log.info("Migrating ALL sources from last sync");
 

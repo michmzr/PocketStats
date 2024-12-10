@@ -59,7 +59,7 @@ public class PocketAuthorizationService {
     }
 
     public String generateSessionId() {
-        return String.valueOf(new Random().nextInt());
+        return String.valueOf(new Random().nextInt(0, 99999));
     }
 
     /**

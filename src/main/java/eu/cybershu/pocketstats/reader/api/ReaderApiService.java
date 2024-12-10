@@ -118,13 +118,23 @@ public class ReaderApiService {
         log.info("Fetching Readwise list with params: {}", params);
 
         List<ReaderItem> items = new LinkedList<>();
-        ReadwiseFetchPaginationParams pageParams = ReadwiseFetchPaginationParams
-                .builder()
-                .updatedAfter(params.updatedAfter())
-                .category(params.category())
-                .location(params.location())
-                .pageCursor(null)
-                .build();
+        ReadwiseFetchPaginationParams pageParams = null;
+        if(params.updatedAfter() == null) {
+            pageParams = ReadwiseFetchPaginationParams
+                    .builder()
+                    .category(params.category())
+                    .location(params.location())
+                    .pageCursor(null)
+                    .build();
+        }else {
+            pageParams = ReadwiseFetchPaginationParams
+                    .builder()
+                    .updatedAfter(params.updatedAfter())
+                    .category(params.category())
+                    .location(params.location())
+                    .pageCursor(null)
+                    .build();
+        }
 
         return getItems(accessToken, params, pageParams, items);
     }
@@ -154,13 +164,23 @@ public class ReaderApiService {
             log.debug("Got items: {}", response.results().size());
             items.addAll(response.results());
 
-            pageParams = ReadwiseFetchPaginationParams
-                    .builder()
-                    .category(params.category())
-                    .location(params.location())
-                    .updatedAfter(params.updatedAfter())
-                    .pageCursor(response.nextPageCursor())
-                    .build();
+            if(params.updatedAfter() != null) {
+                pageParams = ReadwiseFetchPaginationParams
+                        .builder()
+                        .category(params.category())
+                        .location(params.location())
+                        .updatedAfter(params.updatedAfter())
+                        .pageCursor(response.nextPageCursor())
+                        .build();
+            }else {
+                pageParams = ReadwiseFetchPaginationParams
+                        .builder()
+                        .category(params.category())
+                        .location(params.location())
+                        .pageCursor(response.nextPageCursor())
+                        .build();
+            }
+
         } while (pageParams.pageCursor() != null);
 
         return items

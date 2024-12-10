@@ -6,10 +6,7 @@ import eu.cybershu.pocketstats.db.Source;
 import eu.cybershu.pocketstats.migration.ApiMigrationService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.MediaType;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import java.io.IOException;
 import java.util.Optional;
@@ -57,7 +54,16 @@ public class SyncController {
 
         var result = apiMigrationService.importAllFromSinceLastUpdate();
 
-        // todo better
+        return new ApiResponse<>(0, "ok", result);
+    }
+
+    @PostMapping(value = "/last/{source}",
+            produces = MediaType.APPLICATION_JSON_VALUE)
+    public ApiResponse<SyncStatus> lastFromLastSync(@PathVariable("source")  Source source) throws IOException, InterruptedException {
+        log.debug("importing from last sync {}", source);
+
+        var result = apiMigrationService.importAllFromSinceLastUpdate(source);
+
         return new ApiResponse<>(0, "ok", result);
     }
 }

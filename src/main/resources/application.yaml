@@ -39,7 +39,7 @@ spring:
       authentication-database: admin
       auto-index-creation: true
       database: ${MONGODB_DB:db}
-      uri: ${MONGODB_URI}
+      uri: "mongodb+srv://db-user:mnj0pYRuglcOKvl5@cluster0.wdgepgr.mongodb.net/?retryWrites=true&w=majority"
 
 resilience4j.ratelimiter:
   instances:
