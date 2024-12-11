@@ -9,12 +9,15 @@ import eu.cybershu.pocketstats.sync.SyncStatus;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.io.IOException;
 import java.time.Instant;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 @Slf4j
 @Service
@@ -26,6 +29,8 @@ public class ApiMigrationService {
 
     private final EventsPublisher eventsPublisher;
 
+    private static final int BATCH_SIZE = 1000;
+
     public ApiMigrationService(MigrationStatusRepository migrationStatusRepository,
                                PocketApiService pocketApiService, ReaderApiService readerApiService,
                                ItemRepository itemRepository, EventsPublisher eventsPublisher) {
@@ -36,6 +41,7 @@ public class ApiMigrationService {
         this.eventsPublisher = eventsPublisher;
     }
 
+    @Transactional
     public SyncStatus importAllFromSinceLastUpdate(Source source) {
         log.info("Migrating ALL sources from last sync for {}", source);
 
@@ -65,6 +71,7 @@ public class ApiMigrationService {
         }
     }
 
+    @Transactional
     public SyncStatus importAllFromSinceLastUpdate() {
         log.info("Migrating ALL sources from last sync");
 
@@ -99,14 +106,14 @@ public class ApiMigrationService {
             } else {
                 return this.migrateAllFromSource(source);
             }
-        } catch (IOException | InterruptedException e) {
+        } catch (Exception e) {
             log.error("Error migrating source {}", source, e);
 
             throw new RuntimeException("Error migrating source " + source, e);
         }
     }
 
-    private SyncStatus migrateAllFromSource(Source source) throws IOException, InterruptedException {
+    private SyncStatus migrateAllFromSource(Source source) throws Exception {
         log.info("Migrating all sources from beginings of time...");
 
         List<Item> importedItems = new LinkedList<>();
@@ -121,6 +128,7 @@ public class ApiMigrationService {
     }
 
     @SneakyThrows
+    @Transactional
     public SyncStatus migrateSource(Source source, Instant sinceWhen) {
         log.info("Migrating pocket stats from {} to {}", source, sinceWhen);
 
@@ -162,7 +170,7 @@ public class ApiMigrationService {
         }
     }
 
-    private List<Item> migrateFromReader(Optional<Instant> sinceWhen) throws IOException, InterruptedException {
+    private List<Item> migrateFromReader(Optional<Instant> sinceWhen) throws Exception {
         log.info("Using reader for migration - when {}", sinceWhen);
 
         String accessToken = System.getenv("READER_ACCESS_TOKEN");
@@ -175,14 +183,15 @@ public class ApiMigrationService {
     }
 
     private void updateDB(Source source, List<Item> importedItems) {
+        if (!importedItems.isEmpty()) {
+            int totalSize = importedItems.size();
 
-        if (importedItems.size() > 0) {
-            // todo batching
-            //todo solving conflictsc: nie ma dwu kierunkowej synchronizacji pomiedzy pocketem a readerem
-            itemRepository.saveAll(importedItems);
+            IntStream.range(0, (totalSize + BATCH_SIZE - 1) / BATCH_SIZE)
+                    .mapToObj(i -> importedItems.subList(i * BATCH_SIZE, Math.min((i + 1) * BATCH_SIZE, totalSize)))
+                    .forEach(itemRepository::saveAll);
+
         }
 
-        //todo transaction?
         MigrationStatus migrationStatus = new MigrationStatus();
         migrationStatus.id(UUID.randomUUID()
                 .toString());

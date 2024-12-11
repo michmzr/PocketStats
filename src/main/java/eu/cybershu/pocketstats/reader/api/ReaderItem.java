@@ -46,12 +46,22 @@ public record ReaderItem(
         @JsonProperty Map<String, Tag> tags,
         @JsonProperty("site_name") String siteName,
         @JsonProperty("word_count") int wordCount,
+
         @JsonProperty
-        @JsonDeserialize(converter = InstantNanoSecondsConverter.class) Instant created_at,
+        @JsonDeserialize(converter = InstantNanoSecondsConverter.class)
+        Instant created_at,
+
         @JsonProperty
-        @JsonDeserialize(converter = InstantNanoSecondsConverter.class) Instant updated_at,
+        @JsonDeserialize(converter = InstantNanoSecondsConverter.class)
+        Instant updated_at,
+
+        @JsonProperty
+        @JsonDeserialize(converter = InstantNanoSecondsConverter.class)
+        Instant last_moved_at,
+
         @JsonProperty
         String published_date,
+
         @JsonProperty String notes,
         @JsonProperty String summary,
         @JsonProperty("image_url") String imageUrl,

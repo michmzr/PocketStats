@@ -57,7 +57,7 @@ public class ItemsStatsService {
 
         String timeFieldName = getTimeFieldForAggregation(type);
 
-        var collection = getPocketItemsCollection();
+        var collection = getItemCollection();
         AggregateIterable<Document> resultsIter = collection.aggregate(Arrays.asList(new Document("$match",
                         new Document("status", type.toItemStatus()
                                 .name())
@@ -98,7 +98,7 @@ public class ItemsStatsService {
     public List<TopTag> getTopTags(Integer number) {
         log.info("Calculating top {} tags", number);
 
-        var collection = getPocketItemsCollection();
+        var collection = getItemCollection();
         AggregateIterable<Document> resultsIter = collection.aggregate(Arrays.asList(new Document("$unwind",
                         new Document("path", "$tags")),
                 new Document("$group",
@@ -193,7 +193,7 @@ public class ItemsStatsService {
         Instant begin = TimeUtils.toStartDayInstant(timePeriod.begin());
         Instant end = TimeUtils.toEndOfDayInstant(timePeriod.end());
 
-        var collection = getPocketItemsCollection();
+        var collection = getItemCollection();
         AggregateIterable<Document> result = collection.aggregate(Arrays.asList(new Document("$match",
                         new Document("$or", Arrays.asList(new Document("timeAdded",
                                         new Document("$gte",
@@ -239,33 +239,33 @@ public class ItemsStatsService {
     public PeriodItemsStats itemsStatsTotal() {
         log.info("Counting items per status for whole dataset...");
 
-        var collection = getPocketItemsCollection();
+        var collection = getItemCollection();
         AggregateIterable<Document> result = collection.aggregate(List.of(new Document("$group",
                 new Document("_id", "$status")
                         .append("count",
                                 new Document("$sum", 1L)))));
 
-        Map<PocketItemStatus, Long> itemStats = new HashMap<>();
+        Map<ItemStatus, Long> itemStats = new HashMap<>();
         for (Document docs : result) {
             String name = docs.getString("_id");
             long count = docs.getLong("count");
-            itemStats.put(PocketItemStatus.valueOf(name), count);
+            itemStats.put(ItemStatus.valueOf(name), count);
         }
 
         return new PeriodItemsStats(
-                itemStats.get(PocketItemStatus.TO_READ) + itemStats.get(PocketItemStatus.ARCHIVED),
-                itemStats.get(PocketItemStatus.ARCHIVED));
+                itemStats.get(ItemStatus.TO_READ) + itemStats.get(ItemStatus.ARCHIVED),
+                itemStats.get(ItemStatus.ARCHIVED));
     }
 
-    private MongoCollection<Document> getPocketItemsCollection() {
-        return mongoTemplate.getCollection("pocketItem");
+    private MongoCollection<Document> getItemCollection() {
+        return mongoTemplate.getCollection("item");
     }
 
     @Cacheable("stats-lang-stats")
     public Map<String, Long> getLangStats() {
         log.info("Calculating lang stats");
 
-        var collection = getPocketItemsCollection();
+        var collection = getItemCollection();
         AggregateIterable<Document> resultsIter = collection.aggregate(Arrays.asList(new Document("$group",
                         new Document("_id", "$lang")
                                 .append("count",
@@ -307,14 +307,14 @@ public class ItemsStatsService {
         String dateFieldForAggregation = "$" + getTimeFieldForAggregation(type);
         log.debug("Using field {}", dateFieldForAggregation);
 
-        var collection = getPocketItemsCollection();
+        var collection = getItemCollection();
 
         Document match;
         if (itemStatus == ItemStatus.TO_READ) {
             match = new Document("$match",
                     new Document("status",
                             new Document("$exists", true)
-                                    .append("$ne", PocketItemStatus.DELETED)));
+                                    .append("$ne", ItemStatus.DELETED)));
         } else {
             match = new Document("$match",
                     new Document("status", itemStatus.name()));

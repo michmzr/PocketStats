@@ -76,23 +76,27 @@ public class PocketApiService {
                             "offset", offset,
                             "sort", "oldest",
                             "detailType", "complete"));
-
-            Map<String, ListItem> items = pocketResponse.items();
-
-            log.info("Got {} items", items.size());
             log.debug("response: {}", pocketResponse);
 
-            if (items.isEmpty())
+            if(pocketResponse.items() == null || pocketResponse.status() != 1) {
                 break;
+            } else {
+                Map<String, ListItem> items = pocketResponse.items();
 
-            var models = pocketResponse.items()
-                                       .values()
-                                       .stream()
-                    .map(itemMapper::apiToEntity)
-                                       .toList();
-            importedItems.addAll(models);
+                log.info("Got {} items", items.size());
 
-            offset += count;
+                if (items.isEmpty())
+                    break;
+
+                var models = pocketResponse.items()
+                        .values()
+                        .stream()
+                        .map(itemMapper::apiToEntity)
+                        .toList();
+                importedItems.addAll(models);
+
+                offset += count;
+            }
         }
 
         return importedItems;

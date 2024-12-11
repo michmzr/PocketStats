@@ -20,6 +20,7 @@ public interface PocketItemToDbItemMapper {
     }
 
     @Mapping(target = "category", constant = "article")
+    @Mapping(target= "status", source = "status")
     @Mapping(target = "source", constant = "POCKET")
     Item apiToEntity(ListItem item);
 }

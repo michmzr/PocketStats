@@ -44,7 +44,8 @@ spring:
 resilience4j.ratelimiter:
   instances:
     readwise-api:
-      limitForPeriod: 20
+      limitForPeriod: 19
       limitRefreshPeriod: 70s
-      timeoutDuration: 60s
+      timeoutDuration: 70s
       eventConsumerBufferSize: 100
+      registerHealthIndicator: true

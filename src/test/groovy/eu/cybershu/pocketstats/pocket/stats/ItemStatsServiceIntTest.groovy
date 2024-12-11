@@ -287,7 +287,7 @@ class ItemStatsServiceIntTest extends BaseTest {
 
     private def "expect to get a valid heatmap of ARCHIVED items stats"() {
         given:
-        def pocketItems = [
+        def dbItems = [
                 hourAndDayArchivedItem(1, 1),
                 hourAndDayArchivedItem(2, 2),
                 hourAndDayAddedItem(2, 2),
@@ -301,7 +301,7 @@ class ItemStatsServiceIntTest extends BaseTest {
                 hourAndDayArchivedItem(11, 7),
         ]
 
-        assert repository.saveAll(pocketItems).size() == pocketItems.size()
+        assert repository.saveAll(dbItems).size() == dbItems.size()
 
         when:
         def result = statsService.heatmapOfStatus(StatsWithStatusType.ARCHIVED)
@@ -310,7 +310,7 @@ class ItemStatsServiceIntTest extends BaseTest {
         !items.empty
         verifyAll {
             items.size() > 5
-            items.size() < pocketItems.size()
+            items.size() < dbItems.size()
 
             //by one weekday
             items.findAll { it.weekday() == 6 }.size() == 2
@@ -327,7 +327,7 @@ class ItemStatsServiceIntTest extends BaseTest {
 
     private def "expect to get a valid heatmap of ADDED items stats"() {
         given:
-        def pocketItems = [
+        def dbItems = [
                 hourAndDayArchivedItem(1, 1),
                 hourAndDayAddedItem(1, 1),
                 hourAndDayArchivedItem(2, 2),
@@ -343,7 +343,7 @@ class ItemStatsServiceIntTest extends BaseTest {
                 hourAndDayAddedItem(18, 7),
         ]
 
-        assert repository.saveAll(pocketItems).size() == pocketItems.size()
+        assert repository.saveAll(dbItems).size() == dbItems.size()
 
         when:
         def result = statsService.heatmapOfStatus(StatsWithStatusType.TODO)
@@ -351,7 +351,7 @@ class ItemStatsServiceIntTest extends BaseTest {
         def items = result.items()
         !items.empty
         verifyAll {
-            items.size() < pocketItems.size()
+            items.size() < dbItems.size()
 
             //by one weekday
             items.findAll { it.weekday() == 6 }.size() == 2

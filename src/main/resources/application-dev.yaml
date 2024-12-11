@@ -3,4 +3,4 @@ management:
     enabled-by-default: true
     web:
       exposure:
-        include: [ 'health', 'info', 'env','logfile', 'loggers', 'endpoints', 'heapdump', 'threadump' ]
+        include: [ 'health', 'info', 'env','logfile', 'loggers', 'endpoints', 'ratelimiters', 'threadump' ]

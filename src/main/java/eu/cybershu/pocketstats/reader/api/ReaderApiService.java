@@ -4,7 +4,9 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import eu.cybershu.pocketstats.api.TooManyRequestsException;
 import eu.cybershu.pocketstats.db.Item;
 import eu.cybershu.pocketstats.reader.ReaderItemToDbItemMapper;
-import io.github.resilience4j.ratelimiter.annotation.RateLimiter;
+import io.github.resilience4j.ratelimiter.RateLimiterRegistry;
+import  io.github.resilience4j.ratelimiter.RateLimiter;
+import jakarta.annotation.PostConstruct;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
@@ -38,7 +40,9 @@ public class ReaderApiService {
 
     private Integer retryAfter;
 
-    public ReaderApiService() {
+    private final RateLimiter rateLimiter;
+
+    public ReaderApiService( RateLimiterRegistry registry) {
         this.itemMapper = ReaderItemToDbItemMapper.INSTANCE;
         this.client = HttpClient
                 .newBuilder()
@@ -47,9 +51,12 @@ public class ReaderApiService {
                 .build();
         this.retryAfter = 0;
         this.mapper = new ObjectMapper().findAndRegisterModules();
-//        this.mapper.disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS)
-//        .disable(DeserializationFeature.READ_DATE_TIMESTAMPS_AS_NANOSECONDS)
-//
+
+        rateLimiter = registry.rateLimiter("readwise-api"); // todo better
+        io.github.resilience4j.ratelimiter.RateLimiter.EventPublisher eventPublisher = rateLimiter.getEventPublisher();
+        eventPublisher.onEvent(event -> log.debug("[{}] rate limiter - On Event. Event Details: {}", event.getRateLimiterName(), event));
+        eventPublisher.onSuccess(event -> log.debug("[{}} rate limiter - On Success. Event Details: {}", event.getRateLimiterName(), event));
+        eventPublisher.onFailure(event -> log.debug("[{}} rate limiter - On Failure. Event Details: {}", event.getRateLimiterName(), event));
     }
 
     private synchronized void updateAfter(Integer updateAfter) {
@@ -57,7 +64,7 @@ public class ReaderApiService {
     }
 
     public List<Item> importCustom(String accessToken, ReadwiseFetchParams params, Optional<Instant> sinceWhen)
-            throws IOException, InterruptedException {
+            throws Exception {
         log.info("Fetching Readwise list with params: {}", params);
 
         List<ReaderItem> items = new LinkedList<>();
@@ -82,7 +89,7 @@ public class ReaderApiService {
         return getItems(accessToken, params, pageParams, items);
     }
 
-    public List<Item> importAllSinceWhen(String accessToken, Instant sinceWhen) throws IOException, InterruptedException {
+    public List<Item> importAllSinceWhen(String accessToken, Instant sinceWhen) throws Exception {
         log.info("Importing all items from Readwise since {}", sinceWhen);
 
         ReadwiseFetchParams queryParams = ReadwiseFetchParams
@@ -93,7 +100,7 @@ public class ReaderApiService {
         return fetch(accessToken, queryParams);
     }
 
-    public List<Item> importAll(String accessToken) throws IOException, InterruptedException {
+    public List<Item> importAll(String accessToken) throws Exception {
         log.info("Importing all items...");
 
         ReadwiseFetchParams queryParams = ReadwiseFetchParams
@@ -112,9 +119,8 @@ public class ReaderApiService {
      * category	string	The document's category, could be one of: article, email, rss, highlight, note, pdf, epub, tweet, video	no
      * pageCursor	string	A string returned by a previous request to this endpoint. Use it to get the next page of documents if there are too many for one request.	no
      */
-    @RateLimiter(name = "readwise-api")
     public List<Item> fetch(String accessToken, ReadwiseFetchParams params)
-            throws IOException, InterruptedException {
+            throws Exception {
         log.info("Fetching Readwise list with params: {}", params);
 
         List<ReaderItem> items = new LinkedList<>();
@@ -141,14 +147,15 @@ public class ReaderApiService {
 
     private List<Item> getItems(String accessToken, ReadwiseFetchParams params,
                                 ReadwiseFetchPaginationParams pageParams, List<ReaderItem> items)
-            throws IOException, InterruptedException {
+            throws Exception {
         do {
             ReaderListResponse response = null;
             Integer retried = 0;
 
             do {
                 try {
-                    response = fetchPage(accessToken, pageParams);
+                    final var finalPageParams = pageParams;
+                    response = rateLimiter.executeCallable(() -> fetchPage(accessToken, finalPageParams));
 
                     break;
                 } catch (TooManyRequestsException e) {
@@ -162,7 +169,10 @@ public class ReaderApiService {
             } while (retried <= READER_MAX_RETRIES);
 
             log.debug("Got items: {}", response.results().size());
+
             items.addAll(response.results());
+
+            log.debug("Total items: {}", items.size());
 
             if(params.updatedAfter() != null) {
                 pageParams = ReadwiseFetchPaginationParams
@@ -189,8 +199,8 @@ public class ReaderApiService {
                 .toList();
     }
 
-    @RateLimiter(name = "readwise-api")
-    private ReaderListResponse fetchPage(String accessToken, ReadwiseFetchPaginationParams params)
+
+    public ReaderListResponse fetchPage(String accessToken, ReadwiseFetchPaginationParams params)
             throws IOException, InterruptedException, TooManyRequestsException {
         log.info("Fetching Readwise page with params: {}", params);
 
@@ -244,4 +254,5 @@ public class ReaderApiService {
             log.debug("response: {}", response.body());
         }
     }
+
 }
