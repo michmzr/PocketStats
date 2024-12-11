@@ -37,7 +37,7 @@ import java.util.Map;
 @JsonIgnoreProperties(ignoreUnknown = true)
 public record ReaderItem(
         @JsonProperty String id,
-        @JsonProperty String url,
+        @JsonProperty("source_url") String url,
         @JsonProperty String title,
         @JsonProperty String author,
         @JsonProperty String source,
