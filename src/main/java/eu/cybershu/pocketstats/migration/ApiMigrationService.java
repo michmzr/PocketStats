@@ -3,6 +3,8 @@ package eu.cybershu.pocketstats.migration;
 import eu.cybershu.pocketstats.db.*;
 import eu.cybershu.pocketstats.events.EventsPublisher;
 import eu.cybershu.pocketstats.pocket.PocketApiService;
+import eu.cybershu.pocketstats.reader.api.Category;
+import eu.cybershu.pocketstats.reader.api.Location;
 import eu.cybershu.pocketstats.reader.api.ReaderApiService;
 import eu.cybershu.pocketstats.reader.api.ReadwiseFetchParams;
 import eu.cybershu.pocketstats.sync.SyncStatus;
@@ -18,6 +20,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
+import java.util.stream.Stream;
 
 @Slf4j
 @Service
@@ -175,11 +178,34 @@ public class ApiMigrationService {
 
         String accessToken = System.getenv("READER_ACCESS_TOKEN");
 
+        List<Item> items = new LinkedList<>();
         if (sinceWhen.isPresent()) {
-            return readerApiService.importAllSinceWhen(accessToken, sinceWhen.get());
+            items =  readerApiService.importAllSinceWhen(accessToken, sinceWhen.get());
         } else {
-            return readerApiService.importAll(accessToken);
+            items = readerApiService.importAll(accessToken);
         }
+
+        log.debug("Items before filtering: {}", items.size());
+        items = items.stream()
+                .filter(it -> allowForReaderCategories()
+                        .contains(it.category()))
+                .collect(Collectors.toList());
+        log.debug("Items after filtering: {}", items.size());
+
+        return items;
+    }
+
+    private static List<String> allowForReaderCategories() {
+        return Stream
+                .of(Category.ARTICLE,
+                        Category.EMAIL,
+                        Category.RSS,
+                        Category.EPUB,
+                        Category.PDF,
+                        Category.TWEET,
+                        Category.VIDEO
+                ).map(Category::getValue)
+                .toList();
     }
 
     private void updateDB(Source source, List<Item> importedItems) {

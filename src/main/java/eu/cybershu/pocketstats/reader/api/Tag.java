@@ -8,6 +8,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 @JsonIgnoreProperties(ignoreUnknown = true)
 public record Tag(
         @JsonProperty("name") String name,
-        @JsonProperty("type") String type
+        @JsonProperty("type") String type,
+        @JsonProperty("created") Long created
 ) {
 }

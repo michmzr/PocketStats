@@ -5,6 +5,7 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import eu.cybershu.pocketstats.utils.InstantNanoSecondsConverter;
+import org.springframework.lang.Nullable;
 
 import java.time.Instant;
 import java.util.Map;
@@ -37,7 +38,6 @@ import java.util.Map;
 public record ReaderItem(
         @JsonProperty String id,
         @JsonProperty String url,
-        @JsonProperty("source_url") String sourceUrl,
         @JsonProperty String title,
         @JsonProperty String author,
         @JsonProperty String source,
@@ -60,6 +60,7 @@ public record ReaderItem(
         Instant last_moved_at,
 
         @JsonProperty
+        @Nullable
         String published_date,
 
         @JsonProperty String notes,

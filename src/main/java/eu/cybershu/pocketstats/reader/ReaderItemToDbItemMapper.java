@@ -24,44 +24,15 @@ public interface ReaderItemToDbItemMapper {
         else return tags.keySet().stream().toList();
     }
 
-    //custom function for field 'status' for Item from ReaderItem
-    // maps: location==new -> ItemStatus.UNREAD
-    // maps: location==later -> ItemStatus.UNREAD
-    // maps: location==feed -> ItemStatus.UNREAD
-    // maps: location==shortlist -> ItemStatus.UNREAD
-    // maps: location==archive -> ItemStatus.ARCHIVED
-
-
-    @Mapping(target = "id", source = "id")
-    @Mapping(target = "url", source = "url")
-    @Mapping(target = "title", source = "title")
-    @Mapping(target = "favorite", constant = "false")
-    @Mapping(target = "status", qualifiedByName = "readerStatusToItemStatus")
-    @Mapping(target = "timeAdded", source = "created_at")
-    @Mapping(target = "timeUpdated", source = "updated_at")
-    @Mapping(target = "timeRead", qualifiedByName = "readerLocationToTimeRead")
-    @Mapping(target = "timeFavorited", constant = "null")
-    @Mapping(target = "resolvedTitle", source = "title")
-    @Mapping(target = "resolvedUrl", source = "sourceUrl")
-    @Mapping(target = "excerpt", source = "summary")
-    @Mapping(target = "wordCount", source = "wordCount")
-    @Mapping(target = "category", constant = "article")
-    @Mapping(target = "source", constant = "READER")
-    Item apiToEntity(ReaderItem readerItem);
-
+    // Custom mapping logic for the `status` field
     @Named("readerStatusToItemStatus")
-    public static ItemStatus readerStatusToItemStatus(ReaderItem readerItem) {
+    static ItemStatus readerStatusToItemStatus(ReaderItem readerItem) {
+        if(readerItem.location() == null) {
+            return ItemStatus.TO_READ;
+        }
+
         switch (readerItem.location()) {
-            case NEW -> {
-                return ItemStatus.TO_READ;
-            }
-            case LATER -> {
-                return ItemStatus.TO_READ;
-            }
-            case FEED -> {
-                return ItemStatus.TO_READ;
-            }
-            case SHORTLIST -> {
+            case NEW, LATER, FEED, SHORTLIST -> {
                 return ItemStatus.TO_READ;
             }
             case ARCHIVE -> {
@@ -73,15 +44,27 @@ public interface ReaderItemToDbItemMapper {
         }
     }
 
+    // Custom mapping logic for the `timeRead` field
     @Named("readerLocationToTimeRead")
-    public static Instant readerLocationToTimeRead(ReaderItem readerItem) {
-        switch (readerItem.location()) {
-            case ARCHIVE -> {
-                return readerItem.last_moved_at();
-            }
-            default -> {
-                return null;
-            }
+    static Instant readerLocationToTimeRead(ReaderItem readerItem) {
+        if (readerItem.location() == Location.ARCHIVE) {
+            return readerItem.last_moved_at();
         }
+        return null;
     }
+
+    @Mapping(target = "id", source = "id")
+    @Mapping(target = "url", source = "url")
+    @Mapping(target = "title", source = "title")
+    @Mapping(target = "favorite", constant = "false")
+    @Mapping(target = "status", source = ".", qualifiedByName = "readerStatusToItemStatus") // Use custom logic
+    @Mapping(target = "timeAdded", source = "created_at")
+    @Mapping(target = "timeUpdated", source = "updated_at")
+    @Mapping(target = "timeRead", source = ".", qualifiedByName = "readerLocationToTimeRead") // Use custom logic
+    @Mapping(target = "excerpt", source = "summary")
+    @Mapping(target = "wordCount", source = "wordCount")
+    @Mapping(target = "category", constant = "article")
+    @Mapping(target = "source", constant = "READER")
+    @Mapping(target = "lang", constant = "null")
+    Item apiToEntity(ReaderItem readerItem);
 }
