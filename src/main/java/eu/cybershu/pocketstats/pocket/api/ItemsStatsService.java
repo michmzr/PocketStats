@@ -252,9 +252,13 @@ public class ItemsStatsService {
             itemStats.put(ItemStatus.valueOf(name), count);
         }
 
-        return new PeriodItemsStats(
-                itemStats.get(ItemStatus.TO_READ) + itemStats.get(ItemStatus.ARCHIVED),
-                itemStats.get(ItemStatus.ARCHIVED));
+        if(itemStats.isEmpty()) {
+            return new PeriodItemsStats(0L, 0L);
+        } else {
+            return new PeriodItemsStats(
+                    itemStats.get(ItemStatus.TO_READ) + itemStats.get(ItemStatus.ARCHIVED),
+                    itemStats.get(ItemStatus.ARCHIVED));
+        }
     }
 
     private MongoCollection<Document> getItemCollection() {

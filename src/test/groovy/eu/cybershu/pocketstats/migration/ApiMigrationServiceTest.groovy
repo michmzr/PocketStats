@@ -3,6 +3,8 @@ package eu.cybershu.pocketstats.migration
 import eu.cybershu.pocketstats.db.*
 import eu.cybershu.pocketstats.events.EventsPublisher
 import eu.cybershu.pocketstats.pocket.PocketApiService
+import eu.cybershu.pocketstats.pocket.api.BaseTest
+import eu.cybershu.pocketstats.reader.api.Category
 import eu.cybershu.pocketstats.reader.api.ReaderApiService
 import eu.cybershu.pocketstats.utils.TimeUtils
 import spock.lang.Specification
@@ -10,7 +12,7 @@ import spock.lang.Unroll
 
 import java.time.Instant
 
-class ApiMigrationServiceTest extends Specification {
+class ApiMigrationServiceTest extends BaseTest {
     private MigrationStatusRepository migrationStatusRepository
     private PocketApiService pocketApiService
     private ReaderApiService readerApiService
@@ -59,7 +61,7 @@ class ApiMigrationServiceTest extends Specification {
         Instant sinceWhen = TimeUtils.instantFrom("2024-09-28", "01:00:00")
 
         Source source = Source.READER
-        def expectedItem = new Item()
+        def expectedItem = new Item(category: Category.ARTICLE.value)
         def savedStatus = new MigrationStatus(
                 source: source,
                 migratedItems: 1,
@@ -141,8 +143,14 @@ class ApiMigrationServiceTest extends Specification {
                 source: Source.READER
         )
 
-        def pocketItem = new Item(id: 123, title: "Pocket Item")
-        def readerItem = new Item(id: 456, title: "Reader Item")
+        def pocketItem = new Item(id: 123,
+                title: "Pocket Item",
+                source: Source.POCKET,
+                category: Category.ARTICLE.value)
+        def readerItem = new Item(id: 456,
+                title: "Reader Item",
+                source: Source.READER,
+                category: Category.ARTICLE.value)
 
         def pkStatus = new MigrationStatus(
                 source: Source.POCKET,

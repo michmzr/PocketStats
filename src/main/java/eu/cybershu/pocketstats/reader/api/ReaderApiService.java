@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import eu.cybershu.pocketstats.api.TooManyRequestsException;
 import eu.cybershu.pocketstats.db.Item;
 import eu.cybershu.pocketstats.reader.ReaderItemToDbItemMapper;
+import io.github.resilience4j.ratelimiter.RateLimiter.EventPublisher;
 import io.github.resilience4j.ratelimiter.RateLimiterRegistry;
 import  io.github.resilience4j.ratelimiter.RateLimiter;
 import jakarta.annotation.PostConstruct;
@@ -52,8 +53,8 @@ public class ReaderApiService {
         this.retryAfter = 0;
         this.mapper = new ObjectMapper().findAndRegisterModules();
 
-        rateLimiter = registry.rateLimiter("readwise-api"); // todo better
-        io.github.resilience4j.ratelimiter.RateLimiter.EventPublisher eventPublisher = rateLimiter.getEventPublisher();
+        rateLimiter = registry.rateLimiter("readwise-api");
+        EventPublisher eventPublisher = rateLimiter.getEventPublisher();
         eventPublisher.onEvent(event -> log.debug("[{}] rate limiter - On Event. Event Details: {}", event.getRateLimiterName(), event));
         eventPublisher.onSuccess(event -> log.debug("[{}} rate limiter - On Success. Event Details: {}", event.getRateLimiterName(), event));
         eventPublisher.onFailure(event -> log.debug("[{}} rate limiter - On Failure. Event Details: {}", event.getRateLimiterName(), event));
