@@ -37,14 +37,14 @@ public class PocketApiService {
     @Value("${auth.pocket.url.get}")
     private String pocketGetUrl;
 
-    public PocketApiService(PocketAuthorizationService authorizationService) {
+    public PocketApiService(PocketAuthorizationService authorizationService, ObjectMapper mapper) {
         this.authorizationService = authorizationService;
         this.client = HttpClient
                 .newBuilder()
                 .followRedirects(HttpClient.Redirect.NORMAL)
                 .connectTimeout(Duration.ofSeconds(20))
                 .build();
-        this.mapper = new ObjectMapper();
+        this.mapper = mapper;
         this.itemMapper = PocketItemToDbItemMapper.INSTANCE;
     }
 
@@ -76,9 +76,10 @@ public class PocketApiService {
                             "offset", offset,
                             "sort", "oldest",
                             "detailType", "complete"));
-            log.debug("response: {}", pocketResponse);
+            log.debug("pocket api response: {}", pocketResponse);
 
             if(pocketResponse.items() == null || pocketResponse.status() != 1) {
+                log.info("Got empty response or status is not 1. Breaking loop");
                 break;
             } else {
                 Map<String, ListItem> items = pocketResponse.items();
