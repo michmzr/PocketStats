@@ -228,13 +228,13 @@ public class ApiMigrationService {
     }
 
     public Optional<Instant> lastMigrationDate(Source source) {
-        return migrationStatusRepository
-                .findBySourceOrderByDateDesc(source)
-                .map(it -> it.date());
+        return lastMigration(source)
+                .map(MigrationStatus::date);
     }
 
     public Optional<MigrationStatus> lastMigration(Source source) {
         return migrationStatusRepository
-                .findBySourceOrderByDateDesc(source);
+                .findFirstBySourceOrderByDateDesc(source)
+                .stream().findAny();
     }
 }
