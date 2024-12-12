@@ -14,17 +14,17 @@ auth:
     consumer-key: ${POCKET_CONSUMER_KEY}
     redirect_uri: ${VUE_APP_BACKEND_URL:http://localhost:8081}/pocket/auth/token
 
-management:
-  endpoints:
-    web:
-      exposure:
-        include: [ 'configprops', 'mappings', 'health', 'info', 'logfile', 'loggers', 'endpoints' ]
+management.endpoints.enabled-by-default: false
+
 server:
   port: ${PORT:8081}
   error:
     include-binding-errors: always
 
+
 spring:
+  main:
+    lazy-initialization: true
   server:
     port: ${PORT:8081}
     servlet:
@@ -32,10 +32,20 @@ spring:
   jackson:
     serialization:
       WRITE_DATES_AS_TIMESTAMPS: false
+
   datasource.driver-class-name: com.mysql.jdbc.Driver
   data:
     mongodb:
       authentication-database: admin
       auto-index-creation: true
       database: ${MONGODB_DB:db}
-      uri: ${MONGODB_URI}
+      uri: "mongodb+srv://db-user:mnj0pYRuglcOKvl5@cluster0.wdgepgr.mongodb.net/?retryWrites=true&w=majority"
+
+resilience4j.ratelimiter:
+  instances:
+    readwise-api:
+      limitForPeriod: 19
+      limitRefreshPeriod: 70s
+      timeoutDuration: 70s
+      eventConsumerBufferSize: 100
+      registerHealthIndicator: true

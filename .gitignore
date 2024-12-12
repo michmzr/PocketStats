@@ -1,3 +1,6 @@
+.env
+*.env
+
 # Compiled class file
 *.class
 
@@ -161,6 +164,9 @@ pocket-creds.json
 #Python
 venv
 
+.bin
+.vscode
+
 # Frontend
 ./src/frontend/node_modules
 
@@ -171,3 +177,6 @@ src/main/java/eu/cybershu/pocketstats/pocket/api/.DS_Store
 src/.DS_Store
 src/main/.DS_Store
 src/main/raporting/.DS_Store
+
+bin
+node_modules!/src/main/docker/docker/

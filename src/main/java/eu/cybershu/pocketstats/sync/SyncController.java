@@ -2,40 +2,49 @@ package eu.cybershu.pocketstats.sync;
 
 import eu.cybershu.pocketstats.api.ApiResponse;
 import eu.cybershu.pocketstats.db.MigrationStatus;
-import eu.cybershu.pocketstats.pocket.PocketApiService;
+import eu.cybershu.pocketstats.db.Source;
+import eu.cybershu.pocketstats.migration.ApiMigrationService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.MediaType;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import java.io.IOException;
-import java.time.Instant;
+import java.util.Optional;
 
 @Slf4j
 @RestController
 @RequestMapping("/sync/")
 public class SyncController {
-    private final PocketApiService pocketApiService;
+    private final ApiMigrationService apiMigrationService;
 
-    public SyncController(PocketApiService pocketApiService) {
-        this.pocketApiService = pocketApiService;
+    public SyncController(ApiMigrationService apiMigrationService) {
+        this.apiMigrationService = apiMigrationService;
     }
+
 
     @GetMapping(value = "/last",
             produces = MediaType.APPLICATION_JSON_VALUE)
-    public ApiResponse<SyncStatus> lastSync() {
-        MigrationStatus lastMigration = pocketApiService.lastMigration();
+    public ApiResponse<SyncStatus> lastSync(Source source) {
+        log.info("Checking last migration for {}", source);
 
-        log.debug("import from last - status={}", lastMigration);
+        Optional<MigrationStatus> lastMigrationOpt = apiMigrationService.lastMigration(source);
+        log.debug("Last migration {} status {}", source, lastMigrationOpt);
 
-        SyncStatus syncStatus = new SyncStatus(
-                lastMigration != null ? lastMigration.date() : null,
-                lastMigration != null ? lastMigration.migratedItems() : null
-        );
+        if (lastMigrationOpt.isPresent()) {
+            SyncStatus syncStatus = new SyncStatus(
+                    lastMigrationOpt.get().date(),
+                    lastMigrationOpt.get().migratedItems(),
+                    true
+            );
 
-        return new ApiResponse<>(0, "ok", syncStatus);
+            return new ApiResponse<>(0, "ok", syncStatus);
+        } else {
+            SyncStatus syncStatus = new SyncStatus(
+                    null, 0, false
+            );
+
+            return new ApiResponse<>(0, "Not found migration status", syncStatus);
+        }
     }
 
     @PostMapping(value = "/last",
@@ -43,6 +52,18 @@ public class SyncController {
     public ApiResponse<SyncStatus> lastFromLastSync() throws IOException, InterruptedException {
         log.debug("importing from last sync...");
 
-        return new ApiResponse<>(0, "ok", pocketApiService.importFromSinceLastUpdate());
+        var result = apiMigrationService.importAllFromSinceLastUpdate();
+
+        return new ApiResponse<>(0, "ok", result);
+    }
+
+    @PostMapping(value = "/last/{source}",
+            produces = MediaType.APPLICATION_JSON_VALUE)
+    public ApiResponse<SyncStatus> lastFromLastSync(@PathVariable("source")  Source source) throws IOException, InterruptedException {
+        log.debug("importing from last sync {}", source);
+
+        var result = apiMigrationService.importAllFromSinceLastUpdate(source);
+
+        return new ApiResponse<>(0, "ok", result);
     }
 }

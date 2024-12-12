@@ -1,4 +1,4 @@
-package eu.cybershu.pocketstats.pocket.api;
+package eu.cybershu.pocketstats.db;
 
 import com.fasterxml.jackson.annotation.JsonValue;
 

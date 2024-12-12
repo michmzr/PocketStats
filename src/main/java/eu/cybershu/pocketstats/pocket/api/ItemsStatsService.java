@@ -2,6 +2,7 @@ package eu.cybershu.pocketstats.pocket.api;
 
 import com.mongodb.client.AggregateIterable;
 import com.mongodb.client.MongoCollection;
+import eu.cybershu.pocketstats.db.ItemStatus;
 import eu.cybershu.pocketstats.events.UserSynchronizedItemsEvent;
 import eu.cybershu.pocketstats.stats.DayStat;
 import eu.cybershu.pocketstats.stats.DayStatsRecords;
@@ -30,12 +31,12 @@ import java.util.concurrent.ExecutionException;
 
 @Slf4j
 @Service
-public class PocketItemStatsService {
+public class ItemsStatsService {
     private final MongoTemplate mongoTemplate;
 
     private final Clock clock;
 
-    public PocketItemStatsService(
+    public ItemsStatsService(
             Clock clock,
             MongoTemplate mongoTemplate
     ) {
@@ -56,7 +57,7 @@ public class PocketItemStatsService {
 
         String timeFieldName = getTimeFieldForAggregation(type);
 
-        var collection = getPocketItemsCollection();
+        var collection = getItemCollection();
         AggregateIterable<Document> resultsIter = collection.aggregate(Arrays.asList(new Document("$match",
                         new Document("status", type.toItemStatus()
                                 .name())
@@ -97,7 +98,7 @@ public class PocketItemStatsService {
     public List<TopTag> getTopTags(Integer number) {
         log.info("Calculating top {} tags", number);
 
-        var collection = getPocketItemsCollection();
+        var collection = getItemCollection();
         AggregateIterable<Document> resultsIter = collection.aggregate(Arrays.asList(new Document("$unwind",
                         new Document("path", "$tags")),
                 new Document("$group",
@@ -192,7 +193,7 @@ public class PocketItemStatsService {
         Instant begin = TimeUtils.toStartDayInstant(timePeriod.begin());
         Instant end = TimeUtils.toEndOfDayInstant(timePeriod.end());
 
-        var collection = getPocketItemsCollection();
+        var collection = getItemCollection();
         AggregateIterable<Document> result = collection.aggregate(Arrays.asList(new Document("$match",
                         new Document("$or", Arrays.asList(new Document("timeAdded",
                                         new Document("$gte",
@@ -238,7 +239,7 @@ public class PocketItemStatsService {
     public PeriodItemsStats itemsStatsTotal() {
         log.info("Counting items per status for whole dataset...");
 
-        var collection = getPocketItemsCollection();
+        var collection = getItemCollection();
         AggregateIterable<Document> result = collection.aggregate(List.of(new Document("$group",
                 new Document("_id", "$status")
                         .append("count",
@@ -251,20 +252,24 @@ public class PocketItemStatsService {
             itemStats.put(ItemStatus.valueOf(name), count);
         }
 
-        return new PeriodItemsStats(
-                itemStats.get(ItemStatus.TO_READ) + itemStats.get(ItemStatus.ARCHIVED),
-                itemStats.get(ItemStatus.ARCHIVED));
+        if(itemStats.isEmpty()) {
+            return new PeriodItemsStats(0L, 0L);
+        } else {
+            return new PeriodItemsStats(
+                    itemStats.get(ItemStatus.TO_READ) + itemStats.get(ItemStatus.ARCHIVED),
+                    itemStats.get(ItemStatus.ARCHIVED));
+        }
     }
 
-    private MongoCollection<Document> getPocketItemsCollection() {
-        return mongoTemplate.getCollection("pocketItem");
+    private MongoCollection<Document> getItemCollection() {
+        return mongoTemplate.getCollection("item");
     }
 
     @Cacheable("stats-lang-stats")
     public Map<String, Long> getLangStats() {
         log.info("Calculating lang stats");
 
-        var collection = getPocketItemsCollection();
+        var collection = getItemCollection();
         AggregateIterable<Document> resultsIter = collection.aggregate(Arrays.asList(new Document("$group",
                         new Document("_id", "$lang")
                                 .append("count",
@@ -306,7 +311,7 @@ public class PocketItemStatsService {
         String dateFieldForAggregation = "$" + getTimeFieldForAggregation(type);
         log.debug("Using field {}", dateFieldForAggregation);
 
-        var collection = getPocketItemsCollection();
+        var collection = getItemCollection();
 
         Document match;
         if (itemStatus == ItemStatus.TO_READ) {

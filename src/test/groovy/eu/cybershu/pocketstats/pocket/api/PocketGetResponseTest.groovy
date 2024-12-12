@@ -91,6 +91,8 @@ class PocketGetResponseTest extends BaseTest {
                 item.timeAdded()
                 item.timeRead()
 
+                item.status() == PocketItemStatus.TO_READ
+
                 item.timeFavorited()
                 item.favorite()
 

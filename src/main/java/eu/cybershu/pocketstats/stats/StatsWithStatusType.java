@@ -1,6 +1,6 @@
 package eu.cybershu.pocketstats.stats;
 
-import eu.cybershu.pocketstats.pocket.api.ItemStatus;
+import eu.cybershu.pocketstats.db.ItemStatus;
 
 public enum StatsWithStatusType {
     ARCHIVED,

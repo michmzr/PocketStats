@@ -16,3 +16,11 @@ auth:
       get: https://getpocket.com/v3/get
     consumer-key: 212
     redirect_uri: http://localhost:8080/pocket/auth/token
+
+resilience4j.ratelimiter:
+  instances:
+    readwise-api:
+      limitForPeriod: 20
+      limitRefreshPeriod: 70s
+      timeoutDuration: 60s
+      eventConsumerBufferSize: 100

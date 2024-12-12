@@ -1,6 +1,6 @@
 package eu.cybershu.pocketstats.pocket;
 
-public record PocketStats(
+public record SyncStats(
         Long added,
         Long read
 ) {

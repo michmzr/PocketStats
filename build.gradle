@@ -29,6 +29,7 @@ repositories {
 
 ext {
     mapstructVersion = "1.5.3.Final"
+    jacksonVersion = "2.17.0"
     lombokVersion = "1.18.20"
     lombokMapstructBindingVersion = "0.2.0"
 }
@@ -36,11 +37,15 @@ ext {
 dependencies {
     implementation 'org.springframework.boot:spring-boot-starter-actuator'
     implementation 'org.springframework.boot:spring-boot-starter-web'
-    implementation 'commons-validator:commons-validator:1.7'
+    implementation 'commons-validator:commons-validator:1.8.0'
     developmentOnly 'org.springframework.boot:spring-boot-devtools'
-    implementation 'com.fasterxml.jackson.core:jackson-databind'
-    implementation group: 'com.fasterxml.jackson.dataformat', name: 'jackson-dataformat-xml', version: '2.14.2'
-    implementation group: 'com.fasterxml.jackson.core', name: 'jackson-databind', version: '2.14.2'
+
+    implementation("com.fasterxml.jackson:jackson-bom:${jacksonVersion}")
+    implementation("com.fasterxml.jackson.core:jackson-core:${jacksonVersion}")
+    implementation("com.fasterxml.jackson.core:jackson-databind:${jacksonVersion}")
+    implementation("com.fasterxml.jackson.core:jackson-annotations:${jacksonVersion}")
+    implementation("com.fasterxml.jackson.datatype:jackson-datatype-jsr310:${jacksonVersion}")
+
     implementation 'org.springframework.boot:spring-boot-starter-data-mongodb'
     implementation group: 'javax.validation', name: 'validation-api', version: '2.0.1.Final'
     implementation 'com.google.code.findbugs:jsr305:3.0.2'
@@ -54,6 +59,8 @@ dependencies {
             "org.projectlombok:lombok:${lombokVersion}",
             "org.projectlombok:lombok-mapstruct-binding:${lombokMapstructBindingVersion}"
     implementation 'com.google.guava:guava:31.1-jre'
+
+    implementation 'io.github.resilience4j:resilience4j-spring-boot3:2.2.0'
 
     //	Tests
     testImplementation('org.springframework.boot:spring-boot-starter-test') {
@@ -87,22 +94,29 @@ tasks.named('test') {
     useJUnitPlatform()
 }
 
-//jacocoTestReport {
-//    reports {
-//        xml.required = false
-//        csv.required = false
-//        html.outputLocation = layout.buildDirectory.dir('jacocoHtml')
-//    }
-//}
-
-task stage(dependsOn: ['build', 'clean'])
-build.mustRunAfter clean
-task copyToLib(type: Copy) {
-    into "$buildDir/libs"
+// Task to handle frontend dependencies and build
+task npmInstall(type: Exec) {
+    enabled = !gradle.startParameter.taskNames.any { it.contains('test') }
+    workingDir './src/frontend/'
+    commandLine 'npm', 'install'
 }
-stage.dependsOn(copyToLib)
+
+task vueBuild(type: Exec) {
+    enabled = !gradle.startParameter.taskNames.any { it.contains('test') }
+    dependsOn 'npmInstall'
+    workingDir './src/frontend/'
+    commandLine 'npm', 'exec', 'vue-cli-service', 'build'
+}
+
+task copyFrontendToBuild(type: Copy) {
+    enabled = !gradle.startParameter.taskNames.any { it.contains('test') }
+    dependsOn 'vueBuild'
+    from "$projectDir/src/frontend/dist/"
+    into "$buildDir/resources/main/static"
+}
 
 processResources {
+    enabled = !gradle.startParameter.taskNames.any { it.contains('test') }
     dependsOn 'copyFrontendToBuild'
 }
 
@@ -110,19 +124,9 @@ bootJar {
     archiveFileName = "app.jar"
 }
 
-task npmInstall(type: Exec) {
-    workingDir './src/frontend/'
-    commandLine 'npm', 'install'
+task stage(dependsOn: ['build', 'clean'])
+build.mustRunAfter clean
+task copyToLib(type: Copy) {
+    into "$buildDir/libs"
 }
-
-task vueBuild(type: Exec) {
-    dependsOn 'npmInstall'
-    workingDir './src/frontend/'
-    commandLine 'npm', 'exec', 'vue-cli-service', 'build'
-}
-
-task copyFrontendToBuild(type: Copy) {
-    dependsOn 'vueBuild'
-    from "$projectDir/src/frontend/dist/"
-    into "$buildDir/resources/main/static"
-}
+stage.dependsOn(copyToLib)
