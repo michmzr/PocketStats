@@ -57,14 +57,16 @@ public interface ReaderItemToDbItemMapper {
     @Mapping(target = "url", source = "url")
     @Mapping(target = "title", source = "title")
     @Mapping(target = "favorite", constant = "false")
-    @Mapping(target = "status", source = ".", qualifiedByName = "readerStatusToItemStatus") // Use custom logic
+    @Mapping(target = "status", source = ".",
+            qualifiedByName = "readerStatusToItemStatus") // Use custom logic
     @Mapping(target = "timeAdded", source = "created_at")
     @Mapping(target = "timeUpdated", source = "updated_at")
-    @Mapping(target = "timeRead", source = ".", qualifiedByName = "readerLocationToTimeRead") // Use custom logic
+    @Mapping(target = "timeRead", source = ".",
+            qualifiedByName = "readerLocationToTimeRead") // Use custom logic
     @Mapping(target = "excerpt", source = "summary")
     @Mapping(target = "wordCount", source = "wordCount")
-    @Mapping(target = "category", constant = "article")
     @Mapping(target = "source", constant = "READER")
     @Mapping(target = "lang", constant = "null")
+    @Mapping(target = "category", source = "category")
     Item apiToEntity(ReaderItem readerItem);
 }

@@ -256,8 +256,9 @@ public class ItemsStatsService {
             return new PeriodItemsStats(0L, 0L);
         } else {
             return new PeriodItemsStats(
-                    itemStats.get(ItemStatus.TO_READ) + itemStats.get(ItemStatus.ARCHIVED),
-                    itemStats.get(ItemStatus.ARCHIVED));
+                    itemStats.getOrDefault(ItemStatus.TO_READ, 0L)
+                            + itemStats.getOrDefault(ItemStatus.ARCHIVED, 0L),
+                    itemStats.getOrDefault(ItemStatus.ARCHIVED, 0L));
         }
     }
 

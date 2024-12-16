@@ -22,21 +22,27 @@ export const useSessionStore = defineStore("session", {
 export const useSyncStore = defineStore("sync", {
   state: () => {
     return {
-      lastState: ({
-        date: undefined,
-        records: 0
-      } as ISyncStatus)
+      lastState: {
+        READER: ({
+          date: undefined,
+          records: 0
+        } as ISyncStatus),
+        POCKET: ({
+          date: undefined,
+          records: 0
+        } as ISyncStatus)
+      }  as { [key: string]: ISyncStatus }
     }
   },
 
   actions: {
-    setSyncStatus(state: ISyncStatus) {
-      this.lastState = state;
+      setSyncStatus(source: string, state: ISyncStatus) {
+      this.lastState[`${source}`] = state;
     }
   },
   getters: {
-    getSyncStatus(): ISyncStatus {
-      return this.lastState
+    getSyncStatus(source): ISyncStatus {
+      return this.lastState[`${source}`]
     }
   },
 });

@@ -21,10 +21,9 @@ public class SyncController {
         this.apiMigrationService = apiMigrationService;
     }
 
-
-    @GetMapping(value = "/last",
+    @GetMapping(value = "/last/{source}",
             produces = MediaType.APPLICATION_JSON_VALUE)
-    public ApiResponse<SyncStatus> lastSync(Source source) {
+    public ApiResponse<SyncStatus> lastSync(@PathVariable("source")  Source source) {
         log.info("Checking last migration for {}", source);
 
         Optional<MigrationStatus> lastMigrationOpt = apiMigrationService.lastMigration(source);

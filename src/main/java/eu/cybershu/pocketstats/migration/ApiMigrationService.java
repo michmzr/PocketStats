@@ -87,8 +87,8 @@ public class ApiMigrationService {
             SyncStatus pocketSyncStatus = pocketSyncFuture.get();
             SyncStatus readerSyncStatus = readerSyncFuture.get();
 
-            log.info("Pocket migration result: {}", pocketSyncStatus);
-            log.info("Reader migration result: {}", readerSyncStatus);
+            log.info("Import all from lat update - Pocket migration result: {}", pocketSyncStatus);
+            log.info("Import all from lat update - Reader migration result: {}", readerSyncStatus);
 
             return new SyncStatus(Instant.now(),
                     pocketSyncStatus.records() + readerSyncStatus.records(),
@@ -102,6 +102,8 @@ public class ApiMigrationService {
 
     private SyncStatus syncSource(Source source) {
         Optional<Instant> lastOpt = lastMigrationDate(source);
+
+        log.info("Last migration date for {} is {}", source, lastOpt);
 
         try {
             if (lastOpt.isPresent()) {
@@ -135,7 +137,7 @@ public class ApiMigrationService {
     public SyncStatus migrateSource(Source source, Instant sinceWhen) {
         log.info("Migrating pocket stats from {} to {}", source, sinceWhen);
 
-        List<Item> importedItems  = new LinkedList<>();
+        List<Item> importedItems  = Collections.emptyList();
         if (Objects.requireNonNull(source) == Source.POCKET) {
             importedItems = migrateFromPocket(Optional.of(sinceWhen));
         } else if (source == Source.READER) {
@@ -144,11 +146,13 @@ public class ApiMigrationService {
             throw new IllegalArgumentException("Unknown source " + source);
         }
 
+        log.info("Got {} items from {}, saving them to DB", importedItems.size(), source);
+
         return completeMigration(source, importedItems);
     }
 
     private SyncStatus completeMigration(Source source, List<Item> importedItems) {
-        log.info("Compliting migration - got {} items from '{}'", importedItems.size(), source);
+        log.info("Compliting migration - got {} items from '{}'....", importedItems.size(), source);
 
         updateDB(source, importedItems);
 
@@ -180,17 +184,17 @@ public class ApiMigrationService {
 
         List<Item> items = new LinkedList<>();
         if (sinceWhen.isPresent()) {
-            items =  readerApiService.importAllSinceWhen(accessToken, sinceWhen.get());
+            items = readerApiService.importAllSinceWhen(accessToken, sinceWhen.get());
         } else {
             items = readerApiService.importAll(accessToken);
         }
 
-        log.debug("Items before filtering: {}", items.size());
+        log.debug("Reader items before filtering: {}", items.size());
         items = items.stream()
                 .filter(it -> allowForReaderCategories()
-                        .contains(it.category()))
+                        .contains(it.category().toLowerCase()))
                 .collect(Collectors.toList());
-        log.debug("Items after filtering: {}", items.size());
+        log.debug("Reader items after filtering: {}", items.size());
 
         return items;
     }
@@ -234,7 +238,6 @@ public class ApiMigrationService {
 
     public Optional<MigrationStatus> lastMigration(Source source) {
         return migrationStatusRepository
-                .findFirstBySourceOrderByDateDesc(source)
-                .stream().findAny();
+                .findFirstBySourceOrderByDateDesc(source);
     }
 }

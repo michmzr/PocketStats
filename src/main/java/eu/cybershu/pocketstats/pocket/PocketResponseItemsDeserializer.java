@@ -19,10 +19,13 @@ import java.util.Map;
 @Slf4j
 public class PocketResponseItemsDeserializer extends JsonDeserializer<Map<String, ListItem>> {
     @Override
-    public Map<String, ListItem> deserialize(JsonParser p, DeserializationContext ctxt) throws IOException, JacksonException {
+    public Map<String, ListItem> deserialize(JsonParser p, DeserializationContext ctxt) throws IOException {
         Map<String, ListItem> items = new HashMap<>();
 
-        if (List.of(JsonToken.START_ARRAY, JsonToken.END_ARRAY).contains(p.nextToken())) return items;
+        JsonToken token = p.nextToken();
+        if (List.of(JsonToken.START_ARRAY, JsonToken.END_ARRAY)
+                .contains(token))
+            return items;
 
         JsonNode node = p.readValueAsTree();
         ObjectCodec codec = p.getCodec();
@@ -36,7 +39,12 @@ public class PocketResponseItemsDeserializer extends JsonDeserializer<Map<String
                 throw e;
             }
         } else {
-            throw new IllegalArgumentException("Expected items as object. Got " + node);
+            if(node.isNull()) {
+                log.warn("Expected node as object. Got null");
+                return items;
+            } else {
+                throw new IllegalArgumentException("Expected items as object. Got " + node);
+            }
         }
     }
 }

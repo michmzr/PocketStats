@@ -1,13 +1,13 @@
 <template>
   <div class="card" v-if="authorized && loadedData">
     <div class="card-body">
-      <strong>Last sync:</strong> {{ lastSyncMsg }}, synchronized items: {{ lastSync?.records }}
+      <strong>Last sync {{this.source}}:</strong> {{ lastSyncMsg }}
 
       <b-button variant="link" :disabled="syncing"
                 size="sm" v-on:click="sync">
         <span v-if="!syncing">
           <font-awesome-icon icon="spinner"/>
-          Sync
+          Sync {{source}}
         </span>
         <span v-if="syncing">
           <b-spinner small type="grow"></b-spinner>
@@ -24,8 +24,13 @@ import {useSessionStore, useSyncStore} from "@/store";
 import {SyncStatus} from "@/models/sync-models";
 import {SyncService} from "@/services/sync-service";
 import {formatRelative} from "date-fns";
+import {Prop} from "vue-property-decorator";
 
 export default class SyncPanel extends Vue {
+
+  @Prop({type: String, required: true})
+  source!: string;
+
   authorized: Boolean = false;
   sessionStore = useSessionStore();
   syncStore = useSyncStore();
@@ -45,7 +50,7 @@ export default class SyncPanel extends Vue {
 
     this.isAuthorized();
 
-    this.lastSync = this.syncStore.getSyncStatus;
+    this.lastSync = undefined;
     this.lastSyncMsg = this.genSyncMsg();
 
     this.sessionStore.$subscribe((mutation, state) => {
@@ -54,7 +59,7 @@ export default class SyncPanel extends Vue {
 
     this.syncStore.$subscribe((mutation, state) => {
       this.syncing = false;
-      this.lastSync = state.lastState
+      this.lastSync = state.lastState[this.source];
       this.lastSyncMsg = this.genSyncMsg();
       this.loadedData = true;
     });
@@ -62,15 +67,15 @@ export default class SyncPanel extends Vue {
 
   sync() {
     this.syncing = true;
-    this.syncService.syncFromLastSync();
+    this.syncService.syncFromLastSync(this.source);
   }
 
   genSyncMsg(): string {
     if (this.lastSync == undefined || this.lastSync.date == undefined) {
-      return "Never. Synchronize GetPocket!";
+      return "Never.";
     } else {
       const lastDate = new Date(this.lastSync.date)
-      return formatRelative(lastDate, new Date())
+      return formatRelative(lastDate, new Date()) + ", synchronized items: " + this.lastSync.records;
     }
   }
 }

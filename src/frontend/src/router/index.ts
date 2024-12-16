@@ -18,7 +18,8 @@ const router = createRouter({
 
 router.beforeResolve((to, from, next) => {
   new AuthorizationService().updateAuthorizationState();
-  new SyncService().updateLastSyncStatus();
+  new SyncService().updateLastSyncStatus("POCKET");
+  new SyncService().updateLastSyncStatus("READER");
   next()
 })
 
