@@ -1,7 +1,7 @@
 <template>
-  <div class="card" v-if="authorized && loadedData">
+  <div v-if="authorized && loadedData" id="SyncPanel-{{source}}" class="card">
     <div class="card-body">
-      <strong>Last sync {{this.source}}:</strong> {{ lastSyncMsg }}
+      <strong>Last sync {{ source }}:</strong> {{ lastSyncMsg }}
 
       <b-button variant="link" :disabled="syncing"
                 size="sm" v-on:click="sync">
@@ -20,7 +20,7 @@
 
 <script lang="ts">
 import {Vue} from "vue-class-component";
-import {useSessionStore, useSyncStore} from "@/store";
+import {SyncState, useSessionStore, useSyncStore} from "@/store";
 import {SyncStatus} from "@/models/sync-models";
 import {SyncService} from "@/services/sync-service";
 import {formatRelative} from "date-fns";
@@ -41,31 +41,33 @@ export default class SyncPanel extends Vue {
   lastSyncMsg: string | undefined;
   syncService: SyncService = new SyncService();
 
+  selfComponent = this;
+
   isAuthorized() {
     this.authorized = this.sessionStore.isAuthorized;
   }
 
   mounted() {
-    this.loadedData = false;
+    this.selfComponent = this;
 
     this.isAuthorized();
-
-    this.lastSync = undefined;
-    this.lastSyncMsg = this.genSyncMsg();
 
     this.sessionStore.$subscribe((mutation, state) => {
       this.authorized = state.authorized;
     });
 
-    this.syncStore.$subscribe((mutation, state) => {
+    this.syncStore.$subscribe((mutation, state: SyncState) => {
+      console.debug("Got change in sync store -> SyncStore mutation: " + mutation.type);
       this.syncing = false;
-      this.lastSync = state.lastState[this.source];
-      this.lastSyncMsg = this.genSyncMsg();
+      this.lastSync = state.readers.get(this.source);
       this.loadedData = true;
+
+      this.lastSyncMsg = this.genSyncMsg();
     });
   }
 
   sync() {
+    console.log("Syncing items from " + this.source);
     this.syncing = true;
     this.syncService.syncFromLastSync(this.source);
   }

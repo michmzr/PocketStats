@@ -19,31 +19,29 @@ export const useSessionStore = defineStore("session", {
   },
 });
 
+export interface SyncState {
+  readers: Map<string, ISyncStatus>
+}
+
+
 export const useSyncStore = defineStore("sync", {
-  state: () => {
+
+  state: (): SyncState => {
     return {
-      lastState: {
-        READER: ({
-          date: undefined,
-          records: 0
-        } as ISyncStatus),
-        POCKET: ({
-          date: undefined,
-          records: 0
-        } as ISyncStatus)
-      }  as { [key: string]: ISyncStatus }
-    }
+      readers: new Map<string, ISyncStatus>([])
+    };
   },
 
   actions: {
-      setSyncStatus(source: string, state: ISyncStatus) {
-      this.lastState[`${source}`] = state;
+    setSyncStatus(source: string, sourceSyncStatus: ISyncStatus) {
+      this.readers.set(source, sourceSyncStatus);
+    },
+    getSyncStatus(source: string): ISyncStatus {
+      if (this.readers.has(source)) { // @ts-ignore
+        return this.readers.get(source);
+      } else
+        return {date: undefined, records: 0};
     }
-  },
-  getters: {
-    getSyncStatus(source): ISyncStatus {
-      return this.lastState[`${source}`]
-    }
-  },
+  }
 });
 
