@@ -1,7 +1,7 @@
 <template>
-  <div v-if="authorized && loadedData" id="SyncPanel-{{source}}" class="card">
+  <div v-if="authorized && loadedData" :id="'SyncPanel-' + source" class="card">
     <div class="card-body">
-      <strong>Last sync {{ source }}:</strong> {{ lastSyncMsg }}
+      <strong>Last sync {{ source }}:</strong><span v-if="lastSync">{{ lastSyncMsg }}</span>
 
       <b-button variant="link" :disabled="syncing"
                 size="sm" v-on:click="sync">
@@ -25,13 +25,14 @@ import {SyncStatus} from "@/models/sync-models";
 import {SyncService} from "@/services/sync-service";
 import {formatRelative} from "date-fns";
 import {Prop} from "vue-property-decorator";
+import {SubscriptionCallbackMutation} from "pinia";
 
 export default class SyncPanel extends Vue {
 
   @Prop({type: String, required: true})
   source!: string;
 
-  authorized: Boolean = false;
+  authorized: boolean = false;
   sessionStore = useSessionStore();
   syncStore = useSyncStore();
   syncing: boolean = false;
@@ -39,6 +40,7 @@ export default class SyncPanel extends Vue {
 
   lastSync: SyncStatus | undefined = undefined;
   lastSyncMsg: string | undefined;
+
   syncService: SyncService = new SyncService();
 
   selfComponent = this;
@@ -56,20 +58,24 @@ export default class SyncPanel extends Vue {
       this.authorized = state.authorized;
     });
 
-    this.syncStore.$subscribe((mutation, state: SyncState) => {
-      console.debug("Got change in sync store -> SyncStore mutation: " + mutation.type);
-      this.syncing = false;
-      this.lastSync = state.readers.get(this.source);
-      this.loadedData = true;
-
-      this.lastSyncMsg = this.genSyncMsg();
-    });
+    this.syncStore.$subscribe((mutation, state: SyncState) => this.onSynced(mutation, state));
   }
 
   sync() {
     console.log("Syncing items from " + this.source);
     this.syncing = true;
     this.syncService.syncFromLastSync(this.source);
+  }
+
+  onSynced(mutation: SubscriptionCallbackMutation<SyncState>, state: SyncState) {
+    console.debug(`[${this.source}] Got change in sync store`);
+
+    this.syncing = false;
+    this.lastSyncMsg = undefined;
+
+    this.lastSync = state.readers.get(this.source);
+    this.lastSyncMsg = this.genSyncMsg();
+    this.loadedData = true;
   }
 
   genSyncMsg(): string {

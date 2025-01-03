@@ -27,7 +27,7 @@ public class SyncController {
         log.info("Checking last migration for {}", source);
 
         Optional<MigrationStatus> lastMigrationOpt = apiMigrationService.lastMigration(source);
-        log.debug("Last migration {} status {}", source, lastMigrationOpt);
+        log.debug("Last migration {} status is {}", source, lastMigrationOpt);
 
         if (lastMigrationOpt.isPresent()) {
             SyncStatus syncStatus = new SyncStatus(
