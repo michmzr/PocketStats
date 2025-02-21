@@ -31,4 +31,4 @@ Docker service file with mongodb can be find here: [mongodb.yml](https://github.
 - `VUE_APP_BACKEND_URL` - java backend url
 
 **You can read more in
-article**: [https://cybershu.eu/articles/pocket-stats-analytics-app-get-pocket-api.html](https://cybershu.eu/articles/pocket-stats-analytics-app-get-pocket-api.html) (it describes old version!)
+article**: [https://cybershu.eu/articles/pocket-stats-analytics-app-get-pocket-api.html](https://cybershu.eu/articles/pocket-stats-analytics-app-get-pocket-api.html) (it describes old version!!)
