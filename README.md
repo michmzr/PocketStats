@@ -3,6 +3,7 @@
 App for visualising [GetPocket](https://getpocket.com/) and [Reader](https://read.readwise.io/) usage stats.
 
 ## Config
+test
 
 ### Backend
 
