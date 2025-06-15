@@ -9,7 +9,6 @@ concurrency:
 jobs:
   tests:
     runs-on: ubuntu-latest
-    environment: master
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -23,7 +22,7 @@ jobs:
         with:
           node-version: 16
       - name: Build backend and analyse
-Sol        uses: gradle/actions/setup-gradle@v4
+        uses: gradle/actions/setup-gradle@v4
         with:
           gradle-version: current
           arguments: build jacocoTestReport sonar --info -Dsonar.organization=michmzr  -Dsonar.projectKey=michmzr_PocketStats  -Dsonar.host.url=https://sonarcloud.io  -Dsonar.verbose=true
