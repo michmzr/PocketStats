@@ -21,14 +21,15 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 16
-      - name: Build backend and analyse
+      - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v4
-        with:
-          gradle-version: current
-          arguments: build jacocoTestReport sonar --info -Dsonar.organization=michmzr  -Dsonar.projectKey=michmzr_PocketStats  -Dsonar.host.url=https://sonarcloud.io  -Dsonar.verbose=true
+      - name: gradle build & static code analysis
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
           READER_ACCESS_TOKEN: ${{ secrets.READER_ACCESS_TOKEN }}
+        shell: bash
+        run: |
+          ./gradlew build jacocoTestReport sonar --info -Dsonar.organization=michmzr  -Dsonar.projectKey=michmzr_PocketStats  -Dsonar.host.url=https://sonarcloud.io  -Dsonar.verbose=true
   build:
     needs:
      - tests
@@ -46,11 +47,12 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 16
-      - name: Build backend
-        uses: gradle/gradle-build-action@v3
-        with:
-          gradle-version: current
-          arguments: build -x test
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v4
+      - name: build backend
+        shell: bash
+        run: |
+          ./gradlew  build -x test
       - name: Upload backend JAR artifact
         uses: actions/upload-artifact@v4
         with:
@@ -78,9 +80,10 @@ jobs:
         env:
           SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
       - name: Health check
+        shell: bash
         run: |
           echo "Waiting for 30 seconds before healthcheck"
           sleep 30
           echo "Performing healthcheck..."
           wget --retry-connrefused --waitretry=5 --read-timeout=20 --timeout=15 -t 10 http://${{secrets.SSH_HOST}}:8080/pocketstats/actuator/health -O /dev/null
-        shell: bash
+
