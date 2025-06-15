@@ -29,6 +29,10 @@ jobs:
           ssh pocketstats@${{secrets.SSH_HOST}} 'systemctl status pocketstats.service'
         env:
           SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
+      - shell: bash
+        run: |
+          echo "Waiting for 30 seconds before healthcheck"
+          sleep 30
       - name: Check the deployed service URL
         uses: jtalk/url-health-check-action@v4
         with:
