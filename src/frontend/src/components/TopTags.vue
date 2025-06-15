@@ -16,9 +16,9 @@ import {StatsService} from "@/services/stats-service";
 import {ITopTag, ITopTags} from "@/models/stats-models";
 
 export default class TopTags extends Vue {
-  limitTags: number = 30
+  limitTags: number = 200
 
-  authorized: Boolean = false
+  authorized: boolean = false
   loadedData: boolean = false
 
   sessionStore = useSessionStore()

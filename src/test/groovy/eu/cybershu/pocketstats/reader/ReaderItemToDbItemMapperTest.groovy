@@ -56,7 +56,7 @@ class ReaderItemToDbItemMapperTest extends Specification {
         item.timeRead == null
         !item.excerpt.isBlank()
         item.wordCount == 284
-        item.category == "article"
+        item.category == Category.ARTICLE.name()
         item.source == Source.READER
     }
 
@@ -96,7 +96,7 @@ class ReaderItemToDbItemMapperTest extends Specification {
         item.timeRead == Instant.parse("2024-12-06T14:32:50.092000Z")
         !item.excerpt.isEmpty()
         item.wordCount == 591
-        item.category == "article"
+        item.category == Category.ARTICLE.name()
         item.source == Source.READER
     }
 }

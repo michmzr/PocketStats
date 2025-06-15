@@ -23,7 +23,7 @@ jobs:
         with:
           node-version: 16
       - name: Build backend and analyse
-        uses: gradle/gradle-build-action@v3
+Sol        uses: gradle/actions/setup-gradle@v4
         with:
           gradle-version: current
           arguments: build jacocoTestReport sonar --info -Dsonar.organization=michmzr  -Dsonar.projectKey=michmzr_PocketStats  -Dsonar.host.url=https://sonarcloud.io  -Dsonar.verbose=true

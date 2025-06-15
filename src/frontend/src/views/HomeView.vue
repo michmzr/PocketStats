@@ -1,7 +1,11 @@
 <template>
   <div class="row mt-2">
     <div class="col">
-      <TopTools></TopTools>
+      <SyncPanel :source="'POCKET'"></SyncPanel>
+    </div>
+
+    <div class="col">
+      <SyncPanel :source="'READER'"></SyncPanel>
     </div>
   </div>
 
@@ -41,7 +45,7 @@
 <script lang="ts">
 import {Options, Vue} from 'vue-class-component';
 import DailyStatsChart from "@/components/DailyStatsChart.vue";
-import TopTools from "@/components/SyncPanel.vue";
+import SyncPanel from "@/components/SyncPanel.vue";
 import TopTags from "@/components/TopTags.vue";
 import LangStats from "@/components/LangStats.vue";
 import StatsPerPeriod from "@/components/StatsPerPeriod.vue";
@@ -55,10 +59,10 @@ import {HeatmapType} from "@/models/stats-models";
     }
   },
   components: {
+    SyncPanel,
     LangStats,
     TopTags,
     DailyStatsChart,
-    TopTools,
     StatsPerPeriod,
     HeatmapArchivedChart
   },

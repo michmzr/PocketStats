@@ -6,6 +6,7 @@ import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import eu.cybershu.pocketstats.pocket.PocketResponseItemsDeserializer;
 import eu.cybershu.pocketstats.utils.LongToInstantConverter;
 import lombok.Data;
+import org.springframework.lang.Nullable;
 
 import java.time.Instant;
 import java.util.HashMap;
@@ -26,6 +27,7 @@ public class PocketGetResponse {
 
     @JsonProperty("list")
     @JsonDeserialize(using = PocketResponseItemsDeserializer.class)
+    @Nullable
     private Map<String, ListItem> items;
     @JsonProperty("error")
     private Object error;

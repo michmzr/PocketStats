@@ -8,5 +8,5 @@ import java.util.Optional;
 
 @Service
 public interface MigrationStatusRepository extends MongoRepository<MigrationStatus, String> {
-    Optional<MigrationStatus> findBySourceOrderByDateDesc(Source source);
+    Optional<MigrationStatus> findFirstBySourceOrderByDateDesc(Source source);
 }
