@@ -9,6 +9,7 @@ concurrency:
 jobs:
   tests:
     runs-on: ubuntu-latest
+    environment: master
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -24,10 +25,10 @@ jobs:
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v4
       - name: gradle build & static code analysis
+        shell: bash
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
           READER_ACCESS_TOKEN: ${{ secrets.READER_ACCESS_TOKEN }}
-        shell: bash
         run: |
           ./gradlew build jacocoTestReport sonar --info -Dsonar.organization=michmzr  -Dsonar.projectKey=michmzr_PocketStats  -Dsonar.host.url=https://sonarcloud.io  -Dsonar.verbose=true
   build:
