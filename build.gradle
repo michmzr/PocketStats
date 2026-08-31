@@ -1,6 +1,5 @@
 buildscript {
     repositories {
-        jcenter()
         mavenCentral()
     }
     dependencies {
@@ -13,13 +12,12 @@ plugins {
     id 'jacoco'
     id 'org.sonarqube' version '4.0.0.2929'
     id 'org.springframework.boot' version '3.0.1'
-    id 'io.spring.dependency-management' version '1.1.0'
-    id 'com.github.johnrengelman.shadow' version '8.1.1'
+    id 'io.github.goooler.shadow' version '8.1.8'
 }
 
 apply plugin: "jacoco"
 apply plugin: 'io.spring.dependency-management'
-apply plugin: 'com.github.johnrengelman.shadow'
+apply plugin: 'io.github.goooler.shadow'
 
 repositories {
     mavenCentral()
@@ -29,7 +27,7 @@ repositories {
 ext {
     mapstructVersion = "1.5.3.Final"
     jacksonVersion = "2.17.0"
-    lombokVersion = "1.18.20"
+    lombokVersion = "1.18.32"
     lombokMapstructBindingVersion = "0.2.0"
 }
 
@@ -93,18 +91,20 @@ tasks.named('test') {
     useJUnitPlatform()
 }
 
-// Task to handle frontend dependencies and build
+// Tasks to handle frontend dependencies and build
+def npmCmd = System.getProperty('os.name').toLowerCase().contains('windows') ? 'npm.cmd' : 'npm'
+
 task npmInstall(type: Exec) {
     enabled = !gradle.startParameter.taskNames.any { it.contains('test') }
     workingDir './src/frontend/'
-    commandLine 'npm', 'install'
+    commandLine npmCmd, 'install'
 }
 
 task vueBuild(type: Exec) {
     enabled = !gradle.startParameter.taskNames.any { it.contains('test') }
     dependsOn 'npmInstall'
     workingDir './src/frontend/'
-    commandLine 'npm', 'exec', 'vue-cli-service', 'build'
+    commandLine npmCmd, 'exec', 'vue-cli-service', 'build'
 }
 
 task copyFrontendToBuild(type: Copy) {

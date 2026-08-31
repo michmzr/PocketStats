@@ -180,3 +180,5 @@ src/main/raporting/.DS_Store
 
 bin
 node_modules!/src/main/docker/docker/
+
+node_modules/**
