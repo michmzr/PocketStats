@@ -1,0 +1,120 @@
+#!/usr/bin/python3 -I
+"""Validate the private shared-DEV dashboard gate before executing PocketStats."""
+
+import json
+import os
+from pathlib import Path
+import stat
+import sys
+from urllib.parse import unquote, urlsplit
+
+
+def reject():
+    print("PocketStats configuration rejected", file=sys.stderr)
+    raise SystemExit(78)
+
+
+args = sys.argv[1:]
+check_only = args == ["--check-only"] or (
+    len(args) == 3 and args[:2] == ["--check-only", "--marker-path"]
+)
+check_config_only = args == ["--check-config-only"]
+if args and not check_only and not check_config_only:
+    reject()
+marker_path = Path(args[2]) if len(args) == 3 else Path("/etc/pocketstats-dashboard.json")
+
+required = (
+    "MONGODB_URI",
+    "MONGODB_DB",
+    "POCKET_CONSUMER_KEY",
+    "READER_ACCESS_TOKEN",
+)
+for key in required:
+    value = os.environ.get(key, "")
+    if not value or value != value.strip():
+        reject()
+
+database = os.environ["MONGODB_DB"]
+if database != "test":
+    reject()
+
+try:
+    parsed = urlsplit(os.environ["MONGODB_URI"])
+    uri_database = unquote(parsed.path.lstrip("/"))
+except ValueError:
+    reject()
+if parsed.scheme not in ("mongodb", "mongodb+srv") or not parsed.netloc:
+    reject()
+if parsed.fragment or (uri_database and uri_database != database):
+    reject()
+
+environment = os.environ.copy()
+environment.pop("SPRING_APPLICATION_JSON", None)
+environment.pop("JAVA_TOOL_OPTIONS", None)
+environment.pop("JDK_JAVA_OPTIONS", None)
+environment.pop("_JAVA_OPTIONS", None)
+environment["SPRING_DATA_MONGODB_URI"] = environment["MONGODB_URI"]
+environment["SPRING_DATA_MONGODB_DATABASE"] = database
+environment["SPRING_DATA_MONGODB_AUTO_INDEX_CREATION"] = "false"
+if check_only or check_config_only:
+    if any(key in environment for key in (
+        "SPRING_APPLICATION_JSON", "JAVA_TOOL_OPTIONS", "JDK_JAVA_OPTIONS", "_JAVA_OPTIONS"
+    )):
+        reject()
+    if environment["SPRING_DATA_MONGODB_URI"] != environment["MONGODB_URI"]:
+        reject()
+    if environment["SPRING_DATA_MONGODB_DATABASE"] != database:
+        reject()
+    if environment["SPRING_DATA_MONGODB_AUTO_INDEX_CREATION"] != "false":
+        reject()
+if check_config_only:
+    raise SystemExit(0)
+
+try:
+    fd = os.open(marker_path, os.O_RDONLY | os.O_NOFOLLOW | os.O_CLOEXEC)
+    with os.fdopen(fd, "rb") as marker_file:
+        marker_stat = os.fstat(marker_file.fileno())
+        if (
+            not stat.S_ISREG(marker_stat.st_mode)
+            or marker_stat.st_uid != 0
+            or marker_stat.st_gid != os.getgid()
+            or stat.S_IMODE(marker_stat.st_mode) != 0o640
+            or marker_stat.st_size > 4096
+        ):
+            reject()
+        marker = json.load(marker_file)
+except (OSError, ValueError, UnicodeError):
+    reject()
+
+if not isinstance(marker, dict) or set(marker) != {
+    "version", "database", "mode", "source_unit", "source_state", "evidence_id"
+}:
+    reject()
+if (
+    marker["version"] != 2
+    or marker["database"] != "test"
+    or marker["mode"] != "shared-dev-dashboard"
+    or marker["source_unit"] != "pocketstats.service"
+    or marker["source_state"] != "active-authoritative"
+    or not isinstance(marker["evidence_id"], str)
+    or not 1 <= len(marker["evidence_id"]) <= 128
+):
+    reject()
+
+if check_only:
+    raise SystemExit(0)
+os.execve(
+    "/usr/bin/java",
+    [
+        "/usr/bin/java",
+        "-Xmx512m",
+        "-jar",
+        "/usr/lib/pocketstats/app.jar",
+        "--spring.profiles.active=prod",
+        "--spring.data.mongodb.auto-index-creation=false",
+        "--server.servlet.context-path=/pocketstats",
+        "--server.address=0.0.0.0",
+        "--server.port=18080",
+    ],
+    environment,
+)
