@@ -1,0 +1,94 @@
+name: pocketstats-private-dashboard
+
+services:
+  pocketstats:
+    image: ${POCKETSTATS_RUNTIME_IMAGE:?Provide verified pinned Java17 and Python runtime image}
+    pull_policy: never
+    user: "999:982"
+    entrypoint: [/usr/bin/python3, -I, /usr/local/libexec/pocketstats-launch]
+    working_dir: /var/lib/pocketstats
+    init: true
+    restart: "no"
+    read_only: true
+    cap_drop: [ALL]
+    security_opt: ["no-new-privileges:true"]
+    mem_limit: 768m
+    memswap_limit: 768m
+    cpus: "1"
+    pids_limit: 128
+    env_file:
+      - path: /etc/pocketstats/pocketstats-compose.env
+        required: true
+        format: raw
+    volumes:
+      - type: bind
+        source: ./pocketstats-launch
+        target: /usr/local/libexec/pocketstats-launch
+        read_only: true
+        bind: {create_host_path: false}
+      - type: bind
+        source: /usr/lib/pocketstats/app.jar
+        target: /usr/lib/pocketstats/app.jar
+        read_only: true
+        bind: {create_host_path: false}
+      - type: bind
+        source: /etc/pocketstats-dashboard.json
+        target: /etc/pocketstats-dashboard.json
+        read_only: true
+        bind: {create_host_path: false}
+      - type: bind
+        source: /var/lib/pocketstats
+        target: /var/lib/pocketstats
+        bind: {create_host_path: false}
+      - type: bind
+        source: /home/app
+        target: /home/app
+        bind: {create_host_path: false}
+    tmpfs: ["/tmp:rw,size=32m,mode=1777"]
+    networks: [dashboard, atlas_egress]
+    healthcheck:
+      test: [CMD, /usr/bin/python3, -I, -c, "import socket; socket.create_connection(('127.0.0.1', 18080), timeout=4).close()"]
+      interval: 30s
+      timeout: 6s
+      retries: 3
+      start_period: 60s
+    logging:
+      driver: local
+      options: {max-size: 5m, max-file: "3"}
+
+  dashboard:
+    image: ${POCKETSTATS_PROXY_IMAGE:?Provide verified pinned unprivileged Nginx image}
+    pull_policy: never
+    user: "101:101"
+    entrypoint: [nginx, -c, /etc/nginx/nginx.conf, -g, "daemon off;"]
+    restart: "no"
+    read_only: true
+    cap_drop: [ALL]
+    security_opt: ["no-new-privileges:true"]
+    mem_limit: 64m
+    memswap_limit: 64m
+    cpus: "0.1"
+    pids_limit: 48
+    ports: ["127.0.0.1:18081:8080"]
+    volumes:
+      - type: bind
+        source: ./nginx.conf
+        target: /etc/nginx/nginx.conf
+        read_only: true
+        bind: {create_host_path: false}
+      - type: bind
+        source: /var/lib/pocketstats-ui/releases/b11d50d5b30fa7d4
+        target: /usr/share/nginx/html
+        read_only: true
+        bind: {create_host_path: false}
+    tmpfs: ["/tmp:rw,size=8m,mode=1777"]
+    networks: [dashboard]
+    depends_on:
+      pocketstats: {condition: service_healthy}
+    logging:
+      driver: local
+      options: {max-size: 5m, max-file: "3"}
+
+networks:
+  dashboard: {internal: true}
+  atlas_egress: {}
