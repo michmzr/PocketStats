@@ -54,9 +54,9 @@ class ConfigurationTests(unittest.TestCase):
         self.assertEqual(self.services["dashboard"]["networks"], ["dashboard", "proxy_ingress"])
         self.assertNotIn("coolify", json.dumps(self.config["networks"]))
 
-    def test_no_automatic_restart_or_unbounded_docker_logs(self):
+    def test_automatic_start_preserves_stops_and_bounds_docker_logs(self):
         for service in self.services.values():
-            self.assertEqual(service["restart"], "no")
+            self.assertEqual(service["restart"], "unless-stopped")
             self.assertTrue(service["read_only"])
             self.assertEqual(service["cap_drop"], ["ALL"])
             self.assertEqual(service["logging"], {"driver": "local", "options": {"max-size": "5m", "max-file": "3"}})
