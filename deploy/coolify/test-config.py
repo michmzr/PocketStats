@@ -44,10 +44,14 @@ class ConfigurationTests(unittest.TestCase):
             self.assertFalse(mounts[path]["bind"]["create_host_path"])
         self.assertEqual(backend["env_file"], [{"path": "/etc/pocketstats/pocketstats-compose.env", "required": True, "format": "raw"}])
 
-    def test_egress_is_backend_only_and_no_shared_coolify_network(self):
-        self.assertEqual(self.config["networks"], {"dashboard": {"internal": True}, "atlas_egress": {}})
+    def test_dedicated_proxy_ingress_and_no_shared_coolify_network(self):
+        self.assertEqual(self.config["networks"], {
+            "dashboard": {"internal": True}, "atlas_egress": {},
+            "proxy_ingress": {"driver": "bridge", "internal": False,
+                "driver_opts": {"com.docker.network.bridge.name": "ps-ui-ingress"}},
+        })
         self.assertEqual(self.services["pocketstats"]["networks"], ["dashboard", "atlas_egress"])
-        self.assertEqual(self.services["dashboard"]["networks"], ["dashboard"])
+        self.assertEqual(self.services["dashboard"]["networks"], ["dashboard", "proxy_ingress"])
         self.assertNotIn("coolify", json.dumps(self.config["networks"]))
 
     def test_no_automatic_restart_or_unbounded_docker_logs(self):

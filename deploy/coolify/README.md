@@ -2,7 +2,7 @@
 tags: [dev, resource, pocketstats, coolify]
 aliases: []
 created: 2026-10-02
-updated: 2026-10-02
+updated: 2026-10-03
 status: prepared
 ---
 
@@ -23,3 +23,11 @@ Containers have read-only root filesystems and no capabilities/new privileges. E
 Local unit verification: `python3 deploy/coolify/test-launcher.py` and `python3 deploy/coolify/test-config.py`. Four guard tests and five parsed configuration tests passed. `test-runtime-fixture.sh` additionally passed actual nonroot amd64 Java/Python executable checks, real root:9820640 marker acceptance and unsafe0660 rejection, Nginx syntax/read-only tmpfs startup, exact private routes/method denial and credential-header stripping. Its backend is a synthetic Python HTTP fixture, never the JAR or Atlas. No fixture port is published. These checks establish local container behavior, not target Docker/Coolify delivery, deployed marker access or application/Atlas readiness. Run this script only in the existing prepared local VM; it creates/removes its exact fixture containers and network.
 
 Prepare a stopped Coolify candidate first. During a reviewed short target handoff, stop only the old target JVM and release only its host UI site/port; no overlapping target JVMs. After candidate stats/private/read/restart gates pass, retire host autostart and reconcile its Ansible enable/start playbook before enabling Coolify recovery. On failure, stop candidate and verify exited before restoring old target unit/site. Whole-host reboot and bounded recovery remain separate unverified gates.
+
+## Loopback publication and host firewall prerequisite
+
+On Docker29.8.1, a bounded synthetic Nginx fixture was healthy inside an internal-only bridge but had no effective published port and refused host loopback HTTP. The same fixture on a noninternal bridge published the requested loopback port and returned200. Both disposable networks/containers were removed. Internal network membership alone does not establish host published-port reachability.
+
+The proxy now joins a separate `proxy_ingress` bridge with stable host interface `ps-ui-ingress`, in addition to the existing internal dashboard network. Backend network membership and its unpublished port remain unchanged. Proxy publication remains exactly `127.0.0.1:18081:8080`; it joins no shared Coolify or Atlas-egress network.
+
+Do not activate this revision until Ansible-owned host INPUT and FORWARD rules deny NEW connections originating from `ps-ui-ingress`, including IPv4/IPv6, while admitting established replies and the intended host-originated loopback connection. A noninternal bridge supplies a gateway; Compose alone does not block its outbound traffic. Host firewall syntax, ordering relative to Docker rules, persistence and actual allowed/denied behavior must be verified before deployment. This PR supplies only the application-side network definition, not the required host rules or a claim of runtime acceptance. The fixed bridge name permits only one active instance on this host; preview deployments must remain disabled.

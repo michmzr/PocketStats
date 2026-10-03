@@ -82,7 +82,9 @@ services:
         read_only: true
         bind: {create_host_path: false}
     tmpfs: ["/tmp:rw,size=8m,mode=1777"]
-    networks: [dashboard]
+    # Activation requires host INPUT/FORWARD denial of NEW traffic from
+    # ps-ui-ingress. This noninternal network enables loopback port publishing.
+    networks: [dashboard, proxy_ingress]
     depends_on:
       pocketstats: {condition: service_healthy}
     logging:
@@ -92,3 +94,8 @@ services:
 networks:
   dashboard: {internal: true}
   atlas_egress: {}
+  proxy_ingress:
+    driver: bridge
+    internal: false
+    driver_opts:
+      com.docker.network.bridge.name: ps-ui-ingress
