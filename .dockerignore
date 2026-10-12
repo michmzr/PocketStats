@@ -1,0 +1,7 @@
+.git
+.gradle
+src/frontend/node_modules
+**/.env*
+*.env
+!deploy/coolify/runtime-images.env.example
+security-reports

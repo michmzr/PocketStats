@@ -3,7 +3,7 @@ name: pocketstats-private-dashboard
 services:
   pocketstats:
     image: ${POCKETSTATS_RUNTIME_IMAGE:?Provide verified pinned Java17 and Python runtime image}
-    pull_policy: never
+    pull_policy: always
     user: "999:982"
     entrypoint: [/usr/bin/python3, -I, /usr/local/libexec/pocketstats-launch]
     working_dir: /var/lib/pocketstats
@@ -25,11 +25,6 @@ services:
       - type: bind
         source: ./pocketstats-launch
         target: /usr/local/libexec/pocketstats-launch
-        read_only: true
-        bind: {create_host_path: false}
-      - type: bind
-        source: /usr/lib/pocketstats/app.jar
-        target: /usr/lib/pocketstats/app.jar
         read_only: true
         bind: {create_host_path: false}
       - type: bind
@@ -59,7 +54,7 @@ services:
 
   dashboard:
     image: ${POCKETSTATS_PROXY_IMAGE:?Provide verified pinned unprivileged Nginx image}
-    pull_policy: never
+    pull_policy: always
     user: "101:101"
     entrypoint: [/bin/sh, /usr/local/libexec/dashboard-start]
     restart: unless-stopped
@@ -82,11 +77,6 @@ services:
       - type: bind
         source: ./nginx.conf
         target: /etc/nginx/nginx.conf
-        read_only: true
-        bind: {create_host_path: false}
-      - type: bind
-        source: /var/lib/pocketstats-ui/releases/b11d50d5b30fa7d4
-        target: /usr/share/nginx/html
         read_only: true
         bind: {create_host_path: false}
     tmpfs: ["/tmp:rw,size=8m,mode=1777"]
