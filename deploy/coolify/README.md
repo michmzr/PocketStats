@@ -8,7 +8,7 @@ status: prepared
 
 # Private Coolify statistics dashboard images
 
-Local security verification currently blocks publication: the fresh-source backend image has fixed HIGH/CRITICAL dependency findings, including `CVE-2026-47884` in Spring MVC6.0.3 (reported fix7.0.9) and `CVE-2022-1471` in SnakeYAML1.33 (reported fix2.0). Those major changes require separate acceptance. No imported JAR was scanned or published; zero embedded secret findings were reported in the fresh-source backend image.
+Local security verification currently blocks publication: the fresh-source backend image has fixed HIGH/CRITICAL dependency findings, including `CVE-2026-47884` in Spring MVC6.0.3 (reported fix7.0.9) and `CVE-2022-1471` in SnakeYAML1.33 (reported fix2.0). Those major changes require separate acceptance. The pinned proxy base also has fixed HIGH/CRITICAL package findings, including Nginx1.28.2 requiring1.28.3 fixes. No imported JAR was scanned or published; zero embedded secret findings were reported in either fresh-source image.
 
 The GHCR candidate builds a fresh Java17 JAR and complete Vue dashboard from source. It never reads or publishes the imported host JAR. The packaged MongoDB URI and Pocket consumer key bind from runtime environment. The publication guard checks packaged application resources without printing credentials. Reader access remains supplied through `READER_ACCESS_TOKEN` at runtime.
 
