@@ -1,0 +1,83 @@
+name: Publish Coolify images
+on:
+  push:
+    branches: [master, feat/coolify-ghcr-publishing]
+permissions:
+  contents: read
+concurrency:
+  group: coolify-images
+  cancel-in-progress: false
+jobs:
+  publish:
+    if: github.repository == 'michmzr/PocketStats'
+    timeout-minutes: 35
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          persist-credentials: false
+      - name: Install verified Trivy release
+        run: bash deploy/coolify/install-trivy.sh
+      - name: Scan repository credentials and configuration
+        run: |
+          python3 deploy/coolify/test-security-gates.py
+          bash deploy/coolify/scan-source.sh
+      - uses: actions/setup-java@b6effb05e454b25005698d916606bdc6ffcbf961 # v5
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: '20'
+      - uses: pnpm/action-setup@f40ffcd9367d9f12939873eb1018b921a783ffaa # v4
+        with:
+          version: '9.15.9'
+      - name: Build frontend from locked source
+        working-directory: src/frontend
+        env:
+          VUE_APP_BACKEND_URL: ''
+        run: |
+          pnpm install --frozen-lockfile
+          pnpm build
+      - name: Build new source JAR and verify runtime-only bindings
+        run: |
+          ./gradlew --no-daemon test --tests '*TimePeriodTest' --tests '*CheckDateValidatorTest' --tests '*ReaderItemToDbItemMapperTest' -x npmInstall -x vueBuild
+          ./gradlew --no-daemon bootJar -x npmInstall -x vueBuild
+          python3 deploy/coolify/check-packaged-config.py
+          python3 deploy/coolify/test-launcher.py
+          python3 deploy/coolify/test-config.py
+      - uses: docker/setup-buildx-action@8d2750c68a42422c14e847fe6c8ac0403b4cbd6f # v3
+      - name: Build images locally and verify actual runtimes
+        run: |
+          docker build --label org.opencontainers.image.source=https://github.com/michmzr/PocketStats --label org.opencontainers.image.revision="$GITHUB_SHA" -f deploy/coolify/RUNTIME.Dockerfile -t pocketstats:verify .
+          docker build --label org.opencontainers.image.source=https://github.com/michmzr/PocketStats --label org.opencontainers.image.revision="$GITHUB_SHA" -f deploy/coolify/PROXY.Dockerfile -t pocketstats-dashboard:verify .
+          docker run --rm --network none --entrypoint /bin/sh pocketstats:verify -c 'test -r /usr/lib/pocketstats/app.jar && /usr/bin/java -version && /usr/bin/python3 --version && test "$(id -u):$(id -g)" = 999:982'
+          docker run --rm --network none --read-only --cap-drop ALL --security-opt no-new-privileges:true -e MONGODB_URI=mongodb://fixture.invalid/test -e MONGODB_DB=test -e POCKET_CONSUMER_KEY=fixture -e READER_ACCESS_TOKEN=fixture --entrypoint /usr/bin/python3 pocketstats:verify -I /usr/local/libexec/pocketstats-launch --check-config-only
+          python3 deploy/coolify/test-dashboard-runtime.py pocketstats-dashboard:verify
+      - name: Scan both complete candidate images before publication
+        run: |
+          mkdir -p security-reports
+          for image in pocketstats pocketstats-dashboard; do
+            trivy image --scanners vuln,secret --severity UNKNOWN,LOW,MEDIUM,HIGH,CRITICAL --ignore-unfixed --exit-code 0 --format json --output "security-reports/$image.json" "$image:verify"
+            python3 deploy/coolify/check-scan.py "security-reports/$image.json"
+            trivy image --format cyclonedx --output "security-reports/$image.sbom.json" "$image:verify"
+          done
+      - uses: docker/login-action@c94ce9fb468520275223c153574b00df6fe4bcc9 # v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Publish matched immutable candidates then promote both channels
+        run: bash deploy/coolify/publish-images.sh
+      - name: Retain digest-bound SBOM and publication identities
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: pocketstats-images-${{ github.sha }}
+          path: |
+            security-reports/*.sbom.json
+            security-reports/*.digest
+            security-reports/*.manifest.txt
+          if-no-files-found: error

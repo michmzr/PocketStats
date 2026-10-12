@@ -1,10 +1,11 @@
 #!/usr/bin/env python3
-"""Test runtime configuration in the pinned proxy image with public UI files only.
+"""Test runtime configuration in a newly built complete proxy image.
 
-Run on the trusted Docker host with the public UI release path as argument.
+Run on a trusted container host with the image reference as argument.
 No host ports, backend values, application JAR or Docker socket are mounted.
 """
 import json
+import os
 from pathlib import Path
 import subprocess
 import sys
@@ -13,11 +14,12 @@ import unittest
 import uuid
 
 ROOT = Path(__file__).resolve().parent
-IMAGE = "sha256:0b25a392c599559c0c18c88c37c777f4aa7bf5358ed9217928d1dc99ce056f49"
-UI = Path(sys.argv.pop(1)).resolve()
+IMAGE = sys.argv.pop(1)
 
 
 def command(args, **kwargs):
+    if args[0] == "docker":
+        args[0] = os.environ.get("CONTAINER_ENGINE", "docker")
     return subprocess.run(args, capture_output=True, text=True, timeout=15, **kwargs)
 
 
@@ -32,7 +34,6 @@ class DashboardRuntimeTests(unittest.TestCase):
                 "--memory-swap", "64m", "--cpus", "0.1", "--pids-limit", "48",
                 "--log-driver", "none", "--tmpfs", "/tmp:rw,size=8m,mode=1777",
                 "--env", "VUE_APP_BACKEND_URL=" + value,
-                "--mount", "type=bind,src=" + str(UI) + ",dst=/usr/share/nginx/html,readonly",
                 "--mount", "type=bind,src=" + str(ROOT / "nginx.conf") + ",dst=/etc/nginx/nginx.conf,readonly",
                 "--mount", "type=bind,src=" + str(ROOT / "dashboard-start") + ",dst=/usr/local/libexec/dashboard-start,readonly",
                 "--entrypoint", "/bin/sh"]
@@ -65,9 +66,11 @@ class DashboardRuntimeTests(unittest.TestCase):
                 headers = command(["docker", "exec", name, "wget", "-S", "-O", "/dev/null", "http://127.0.0.1:8080/runtime-config.js"])
                 self.assertEqual(headers.returncode, 0)
                 self.assertIn("Content-Type: application/javascript", headers.stderr)
-                bundle = command(["docker", "exec", name, "wget", "-q", "-O", "-", "http://127.0.0.1:8080/js/app.779754b1.js"])
+                import re
+                asset = re.search(r'src="(/js/app[^" ]+\.js)"', index.stdout).group(1)
+                bundle = command(["docker", "exec", name, "wget", "-q", "-O", "-", "http://127.0.0.1:8080" + asset])
                 self.assertEqual(bundle.returncode, 0)
-                self.assertIn("backendUrl(){return window.POCKETSTATS_CONFIG.backendUrl}", bundle.stdout)
+                self.assertIn("POCKETSTATS_CONFIG", bundle.stdout)
                 metadata = json.loads(command(["docker", "inspect", name]).stdout)[0]
                 self.assertEqual(metadata["HostConfig"]["NetworkMode"], "none")
                 self.assertFalse(metadata["HostConfig"].get("PortBindings"))

@@ -27,7 +27,7 @@ class ConfigurationTests(unittest.TestCase):
         for service in self.services.values():
             self.assertNotIn("labels", service)
             self.assertNotIn("network_mode", service)
-            self.assertEqual(service["pull_policy"], "never")
+            self.assertEqual(service["pull_policy"], "always")
             self.assertTrue(service["image"].startswith("${POCKETSTATS_"))
             self.assertIn(":?", service["image"])
 
@@ -39,9 +39,11 @@ class ConfigurationTests(unittest.TestCase):
         self.assertEqual(backend["cpus"], "1")
         self.assertEqual(backend["entrypoint"], ["/usr/bin/python3", "-I", "/usr/local/libexec/pocketstats-launch"])
         mounts = {mount["target"]: mount for mount in backend["volumes"]}
-        for path in ["/usr/lib/pocketstats/app.jar", "/etc/pocketstats-dashboard.json", "/usr/local/libexec/pocketstats-launch"]:
+        for path in ["/etc/pocketstats-dashboard.json", "/usr/local/libexec/pocketstats-launch"]:
             self.assertTrue(mounts[path]["read_only"])
             self.assertFalse(mounts[path]["bind"]["create_host_path"])
+        self.assertNotIn("/usr/lib/pocketstats/app.jar", mounts)
+        self.assertNotIn("/usr/share/nginx/html", {m["target"] for m in self.services["dashboard"]["volumes"]})
         self.assertNotIn("env_file", backend)
         self.assertEqual(backend["environment"], {key: "${" + key + ":?Set in Coolify}" for key in
             ("MONGODB_URI", "MONGODB_DB", "POCKET_CONSUMER_KEY", "READER_ACCESS_TOKEN")})
