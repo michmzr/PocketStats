@@ -16,10 +16,11 @@ services:
     memswap_limit: 768m
     cpus: "1"
     pids_limit: 128
-    env_file:
-      - path: /etc/pocketstats/pocketstats-compose.env
-        required: true
-        format: raw
+    environment:
+      MONGODB_URI: ${MONGODB_URI:?Set in Coolify}
+      MONGODB_DB: ${MONGODB_DB:?Set in Coolify}
+      POCKET_CONSUMER_KEY: ${POCKET_CONSUMER_KEY:?Set in Coolify}
+      READER_ACCESS_TOKEN: ${READER_ACCESS_TOKEN:?Set in Coolify}
     volumes:
       - type: bind
         source: ./pocketstats-launch
@@ -60,7 +61,7 @@ services:
     image: ${POCKETSTATS_PROXY_IMAGE:?Provide verified pinned unprivileged Nginx image}
     pull_policy: never
     user: "101:101"
-    entrypoint: [nginx, -c, /etc/nginx/nginx.conf, -g, "daemon off;"]
+    entrypoint: [/bin/sh, /usr/local/libexec/dashboard-start]
     restart: unless-stopped
     read_only: true
     cap_drop: [ALL]
@@ -70,7 +71,14 @@ services:
     cpus: "0.1"
     pids_limit: 48
     ports: ["127.0.0.1:18081:8080"]
+    environment:
+      VUE_APP_BACKEND_URL: ${VUE_APP_BACKEND_URL:-}
     volumes:
+      - type: bind
+        source: ./dashboard-start
+        target: /usr/local/libexec/dashboard-start
+        read_only: true
+        bind: {create_host_path: false}
       - type: bind
         source: ./nginx.conf
         target: /etc/nginx/nginx.conf

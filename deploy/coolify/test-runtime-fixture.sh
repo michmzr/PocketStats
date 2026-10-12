@@ -3,7 +3,7 @@
 set -euo pipefail
 runtime=localhost/pocketstats-private-runtime:20261002
 proxy=docker.io/library/nginx@sha256:8f84ed99befc3891b8f329c5c202785278a2cfb7c25107d57fb2a134a3117433
-src=/private/tmp/dev-server-pocketstats-coolify/deploy/coolify
+src=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)
 fixture=$(mktemp -d /var/tmp/pocketstats-runtime-fixture.XXXXXX)
 network=pocketstats-runtime-fixture
 cleanup() {
@@ -73,7 +73,13 @@ podman network create --internal "$network" >/dev/null
 podman run -d --name=pocketstats-fixture-backend "${common[@]}" --network="$network" --network-alias=pocketstats --volume="$fixture/backend.py:/backend.py:ro" "$runtime" /backend.py >/dev/null
 nginxargs=(--pull=never --platform=linux/amd64 --user=101:101 --read-only --cap-drop=ALL --security-opt=no-new-privileges --security-opt=label=disable --memory=64m --memory-swap=64m --cpus=.1 --pids-limit=48 --tmpfs=/tmp:rw,size=8m,mode=1777 --network="$network" --entrypoint=nginx --volume="$fixture/nginx.conf:/etc/nginx/nginx.conf:ro" --volume="$fixture/html:/usr/share/nginx/html:ro")
 podman run --rm "${nginxargs[@]}" "$proxy" -t
-podman run -d --name=pocketstats-fixture-proxy --network-alias=pocketstats-proxy "${nginxargs[@]}" "$proxy" -g 'daemon off;' >/dev/null
+# Route fixtures use a synthetic generated index; public runtime-config behavior
+# is tested separately by test-dashboard-runtime.py against the approved bundle.
+proxyargs=("${nginxargs[@]}")
+for i in "${!proxyargs[@]}"; do
+  if [[ ${proxyargs[$i]} == --entrypoint=nginx ]]; then proxyargs[$i]=--entrypoint=/bin/sh; fi
+done
+podman run -d --name=pocketstats-fixture-proxy --network-alias=pocketstats-proxy "${proxyargs[@]}" "$proxy" -c 'mkdir -p /tmp/pocketstats-ui; cp /usr/share/nginx/html/index.html /tmp/pocketstats-ui/index.html; exec nginx -g "daemon off;"' >/dev/null
 podman run --rm "${common[@]}" --network="$network" --volume="$fixture/client.py:/client.py:ro" "$runtime" /client.py
 podman exec pocketstats-fixture-proxy sh -c 'id; cat /sys/fs/cgroup/memory.max /sys/fs/cgroup/memory.swap.max /sys/fs/cgroup/cpu.max /sys/fs/cgroup/pids.max; test ! -w /etc/nginx; test -w /tmp'
 podman port pocketstats-fixture-proxy

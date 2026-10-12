@@ -1,0 +1,41 @@
+#!/bin/sh
+# Only the public API base belongs in browser configuration, never backend keys.
+set -eu
+export LC_ALL=C
+umask 077
+
+reject() {
+    echo 'PocketStats frontend configuration rejected' >&2
+    exit 78
+}
+
+url=${VUE_APP_BACKEND_URL:-}
+case "$url" in *\\*) reject ;; esac
+# A single-line URL alphabet excludes JavaScript/HTML quoting and escapes.
+printf '%s\n' "$url" | awk '
+    BEGIN { ok=1 }
+    !/^[A-Za-z0-9._~:\/@!$&()*+,;=%-]*$/ { ok=0 }
+    END { exit !(ok && NR==1) }
+' || reject
+case "$url" in
+    //*) reject ;;
+    ''|/|/?*|http://?*|https://?*) ;;
+    *) reject ;;
+esac
+url=${url%/}
+
+root=/usr/share/nginx/html
+printf '%s\n' \
+    "52e6e83275dd0a4410116b4d815fd140028d8eb07b0a79c24ab416454f96676d $root/index.html" \
+    "327568087c2a315492d1789760b91720c41d62abf3b985659afd2d8f49f75b5f $root/js/app.779754b1.js" \
+    | sha256sum -c >/dev/null 2>&1 || reject
+
+mkdir -p /tmp/pocketstats-ui
+printf 'window.POCKETSTATS_CONFIG={"backendUrl":"%s"};\n' "$url" \
+    > /tmp/pocketstats-ui/runtime-config.js
+sed 's#</head>#<script src="/runtime-config.js"></script></head>#' "$root/index.html" \
+    > /tmp/pocketstats-ui/index.html
+sed 's/backendUrl(){return""}/backendUrl(){return window.POCKETSTATS_CONFIG.backendUrl}/' \
+    "$root/js/app.779754b1.js" > /tmp/pocketstats-ui/app.js
+
+exec nginx -c /etc/nginx/nginx.conf -g 'daemon off;'
