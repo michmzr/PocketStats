@@ -31,7 +31,7 @@ class ConfigurationTests(unittest.TestCase):
             self.assertTrue(service["image"].startswith("${POCKETSTATS_"))
             self.assertIn(":?", service["image"])
 
-    def test_numeric_identity_caps_guard_mounts_and_raw_environment(self):
+    def test_numeric_identity_caps_guard_mounts_and_native_environment(self):
         backend = self.services["pocketstats"]
         self.assertEqual(backend["user"], "999:982")
         self.assertEqual(backend["mem_limit"], "768m")
@@ -42,7 +42,13 @@ class ConfigurationTests(unittest.TestCase):
         for path in ["/usr/lib/pocketstats/app.jar", "/etc/pocketstats-dashboard.json", "/usr/local/libexec/pocketstats-launch"]:
             self.assertTrue(mounts[path]["read_only"])
             self.assertFalse(mounts[path]["bind"]["create_host_path"])
-        self.assertEqual(backend["env_file"], [{"path": "/etc/pocketstats/pocketstats-compose.env", "required": True, "format": "raw"}])
+        self.assertNotIn("env_file", backend)
+        self.assertEqual(backend["environment"], {key: "${" + key + ":?Set in Coolify}" for key in
+            ("MONGODB_URI", "MONGODB_DB", "POCKET_CONSUMER_KEY", "READER_ACCESS_TOKEN")})
+        self.assertEqual(self.services["dashboard"]["environment"],
+            {"VUE_APP_BACKEND_URL": "${VUE_APP_BACKEND_URL:-}"})
+        self.assertNotIn("env_file", self.services["dashboard"])
+        self.assertEqual(self.services["dashboard"]["entrypoint"], ["/bin/sh", "/usr/local/libexec/dashboard-start"])
 
     def test_dedicated_proxy_ingress_and_no_shared_coolify_network(self):
         self.assertEqual(self.config["networks"], {
