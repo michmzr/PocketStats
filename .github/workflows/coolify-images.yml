@@ -60,19 +60,24 @@ jobs:
       - name: Scan both complete candidate images before publication
         run: |
           mkdir -p security-reports
+          status=0
           for image in pocketstats pocketstats-dashboard; do
             trivy image --scanners vuln,secret --severity UNKNOWN,LOW,MEDIUM,HIGH,CRITICAL --ignore-unfixed --exit-code 0 --format json --output "security-reports/$image.json" "$image:verify"
-            python3 deploy/coolify/check-scan.py "security-reports/$image.json"
+            python3 deploy/coolify/check-scan.py "security-reports/$image.json" || status=1
             trivy image --format cyclonedx --output "security-reports/$image.sbom.json" "$image:verify"
           done
-      - uses: docker/login-action@c94ce9fb468520275223c153574b00df6fe4bcc9 # v3
+          exit "$status"
+      - if: vars.COOLIFY_IMAGE_PUBLISH_ENABLED == 'true'
+        uses: docker/login-action@c94ce9fb468520275223c153574b00df6fe4bcc9 # v3
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
       - name: Publish matched immutable candidates then promote both channels
+        if: vars.COOLIFY_IMAGE_PUBLISH_ENABLED == 'true'
         run: bash deploy/coolify/publish-images.sh
       - name: Retain digest-bound SBOM and publication identities
+        if: vars.COOLIFY_IMAGE_PUBLISH_ENABLED == 'true'
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
           name: pocketstats-images-${{ github.sha }}
