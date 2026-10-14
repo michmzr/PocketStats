@@ -109,3 +109,11 @@ Test przeglądarkowy wykrył brak reaktywności pól panelu inicjalizowanych `un
 Niezależny przegląd wykrył pozostałą konfigurację Pocket w `application-prod.yaml`; usunięto ją i nieaktualny opis zmiennej `BACKEND_URL`. Przegląd po poprawce nie wykazał istotnych problemów. Usunięto również niewykorzystywany wyjątek autoryzacji Pocket.
 
 Porównanie z Gitem potwierdziło brak zmian w encjach, repozytoriach, źródłach danych i serwisie obliczającym statystyki. Lokalny klucz Pocket usunięto z ignorowanego `env_dev.json`; `pocket-creds.json` pozostawiono. Nie wykonano migracji bazy, merge ani wdrożenia. Rzeczywisty klucz Readwise nie był sprawdzany.
+
+## Dodatkowa kontrola Added/Read
+
+Na prośbę użytkownika sprawdzono wykres dzienny i tabelę okresów w przeglądarce z kontrolowanymi odpowiedziami API. Test odczytuje zarówno dane wykresu Chart.js, jak i pozycje narysowanych punktów po zakończeniu animacji. Dla dat 2026-10-12, 2026-10-13, 2026-10-14 potwierdzono Read `[8, 0, 3]` i Added `[21, 15, 0]`, poprawną kolejność dat i zera przy braku wartości jednej serii. Tabela wyświetla Added/Read `36/11` dla okresu i `1234/567` dla całości.
+
+Wykryto i odtworzono błąd przycisku Apply: domyślne wysłanie formularza przeładowywało stronę i resetowało wybraną datę. Obsługę przeniesiono na zdarzenie submit z prevent. Przycisk jawnie ma typ submit. Po poprawce wybrana data jest przekazywana do API i pozostaje w polu, bez nawigacji strony.
+
+Dodano powtarzalny test `src/frontend/tests/home-stats.browser.js`, uruchamiany przez Playwright MCP po udostępnieniu produkcyjnego buildu na localhost:4173. Siedem scenariuszy przeszło: wartości i przypisanie Added/Read, brakujące daty, tabela okresów, Apply bez przeładowania, zachowanie wybranej daty, puste wyniki czyszczące poprzedni wykres oraz widoczność wykresu i tabeli na ekranie 390 px. Brak wyjątków JavaScript. Kompilacja frontendu i lint zmienionego komponentu oraz testu przeszły. Nie odczytywano ani nie zmieniano rzeczywistej bazy.

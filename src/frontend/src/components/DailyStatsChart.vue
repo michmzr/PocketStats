@@ -4,7 +4,7 @@
       <h5 class="card-title">Daily stats of added and read items.</h5>
 
       <div>
-        <form class="form-inline">
+        <form class="form-inline" v-on:submit.prevent="onChangedDatePeriod">
           <label class="my-1 mr-2">Select period</label>
 
           <div class="custom-control custom-checkbox my-1 mr-sm-2">
@@ -19,7 +19,7 @@
                         class="mb-2" inputFormat="dd-MM-yyyy" v-on:update:modelValue="onChangedDatePeriod"/>
           </div>
 
-          <button class="btn btn-primary mb-2" v-on:click="onChangedDatePeriod">Apply</button>
+          <button class="btn btn-primary mb-2" type="submit">Apply</button>
         </form>
       </div>
       <div style="height: 25em">
