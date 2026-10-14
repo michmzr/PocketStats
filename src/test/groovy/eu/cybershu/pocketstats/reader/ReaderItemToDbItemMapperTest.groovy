@@ -20,6 +20,36 @@ class ReaderItemToDbItemMapperTest extends Specification {
     @Shared
     ReaderItemToDbItemMapper mapper = new ReaderItemToDbItemMapperImpl()
 
+    void "deserializes document analytics fields from Reader API response"() {
+        given:
+        def readerItem = objectMapper.readValue('''{
+            "id": "synthetic-document-id",
+            "url": "https://read.readwise.io/read/synthetic-document-id",
+            "source_url": "mailto:newsletter@example.com",
+            "category": "email",
+            "location": "archive",
+            "tags": {},
+            "created_at": "2026-10-01T08:00:00.123456+00:00",
+            "updated_at": "2026-10-14T09:30:00.654321+00:00",
+            "last_moved_at": "2026-10-03T08:00:00.123456+00:00",
+            "parent_id": null,
+            "reading_progress": 0
+        }''', ReaderItem)
+
+        when:
+        def item = mapper.apiToEntity(readerItem)
+
+        then:
+        item.id == "synthetic-document-id"
+        item.source == Source.READER
+        item.url == "mailto:newsletter@example.com"
+        item.category == Category.EMAIL.name()
+        item.status == ItemStatus.ARCHIVED
+        item.timeAdded == Instant.parse("2026-10-01T08:00:00.123456Z")
+        item.timeUpdated == Instant.parse("2026-10-14T09:30:00.654321Z")
+        item.timeRead == Instant.parse("2026-10-03T08:00:00.123456Z")
+    }
+
     void "test map ReaderItem to Item with new location"() {
         given:
         ReaderItem readerItem = new ReaderItem(

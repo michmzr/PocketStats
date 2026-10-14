@@ -1,11 +1,13 @@
 <template>
   <div class="row mt-2">
     <div class="col">
-      <SyncPanel :source="'POCKET'"></SyncPanel>
+      <SyncPanel></SyncPanel>
     </div>
+  </div>
 
+  <div class="row mt-2">
     <div class="col">
-      <SyncPanel :source="'READER'"></SyncPanel>
+      <LibraryAnalytics></LibraryAnalytics>
     </div>
   </div>
 
@@ -45,6 +47,7 @@
 <script lang="ts">
 import {Options, Vue} from 'vue-class-component';
 import DailyStatsChart from "@/components/DailyStatsChart.vue";
+import LibraryAnalytics from "@/components/LibraryAnalytics.vue";
 import SyncPanel from "@/components/SyncPanel.vue";
 import TopTags from "@/components/TopTags.vue";
 import LangStats from "@/components/LangStats.vue";
@@ -59,6 +62,7 @@ import {HeatmapType} from "@/models/stats-models";
     }
   },
   components: {
+    LibraryAnalytics,
     SyncPanel,
     LangStats,
     TopTags,

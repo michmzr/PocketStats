@@ -1,0 +1,375 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "PocketStats library analytics",
+    "version": "1.0.0",
+    "description": "Read-only analytics from retained documents. Does not require a Readwise token and does not call external APIs. No database migration or deletion."
+  },
+  "paths": {
+    "/stats/library": {
+      "get": {
+        "operationId": "getLibraryAnalytics",
+        "summary": "Get backlog, age, archive delay, comparison, categories and domains",
+        "description": "Only TO_READ/ARCHIVED documents, excluding highlight/note. Snapshot metrics use all retained documents for the selected source. Comparison uses rolling UTC intervals ending at asOf, with exclusive upper bounds. Domains include HTTP(S) hosts and mailto sender domains. Median excludes missing, negative and future archive dates. Read denotes archival, not verified reading.",
+        "parameters": [
+          {
+            "name": "days",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "enum": [
+                7,
+                30,
+                90
+              ],
+              "default": 30
+            },
+            "description": "Length of each comparison interval in days. Does not filter backlog/category/domain snapshot."
+          },
+          {
+            "name": "source",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "POCKET",
+                "READER"
+              ]
+            },
+            "description": "Omit to include both sources. POCKET reads historical records only."
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Current library analytics, including zero counts and null median for empty samples",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "status",
+                    "message",
+                    "data"
+                  ],
+                  "properties": {
+                    "status": {
+                      "type": "integer",
+                      "enum": [
+                        0
+                      ]
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/LibraryAnalytics"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Unsupported days or source"
+          },
+          "500": {
+            "description": "Storage/read failure. Client should keep an error state and allow retry."
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "LibraryAnalytics": {
+        "type": "object",
+        "required": [
+          "asOf",
+          "source",
+          "backlog",
+          "archiveDelay",
+          "comparison",
+          "categories",
+          "domains",
+          "unknownDomainCount"
+        ],
+        "properties": {
+          "asOf": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "source": {
+            "type": "string",
+            "enum": [
+              "POCKET",
+              "READER"
+            ],
+            "nullable": true
+          },
+          "backlog": {
+            "type": "object",
+            "required": [
+              "total",
+              "ageBuckets",
+              "unknownAge"
+            ],
+            "properties": {
+              "total": {
+                "type": "integer",
+                "format": "int64",
+                "minimum": 0
+              },
+              "ageBuckets": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "required": [
+                    "key",
+                    "label",
+                    "count"
+                  ],
+                  "properties": {
+                    "key": {
+                      "type": "string",
+                      "enum": [
+                        "0-30",
+                        "31-90",
+                        "91-180",
+                        "181+"
+                      ]
+                    },
+                    "label": {
+                      "type": "string"
+                    },
+                    "count": {
+                      "type": "integer",
+                      "format": "int64",
+                      "minimum": 0
+                    }
+                  }
+                }
+              },
+              "unknownAge": {
+                "type": "integer",
+                "format": "int64",
+                "minimum": 0
+              }
+            }
+          },
+          "archiveDelay": {
+            "type": "object",
+            "required": [
+              "medianDays",
+              "eligibleRecords",
+              "excludedRecords"
+            ],
+            "properties": {
+              "medianDays": {
+                "type": "number",
+                "format": "double",
+                "minimum": 0,
+                "nullable": true
+              },
+              "eligibleRecords": {
+                "type": "integer",
+                "format": "int64",
+                "minimum": 0
+              },
+              "excludedRecords": {
+                "type": "integer",
+                "format": "int64",
+                "minimum": 0
+              }
+            }
+          },
+          "comparison": {
+            "type": "object",
+            "required": [
+              "days",
+              "current",
+              "previous",
+              "added",
+              "read"
+            ],
+            "properties": {
+              "days": {
+                "type": "integer",
+                "enum": [
+                  7,
+                  30,
+                  90
+                ]
+              },
+              "current": {
+                "type": "object",
+                "required": [
+                  "start",
+                  "end",
+                  "added",
+                  "read"
+                ],
+                "properties": {
+                  "start": {
+                    "type": "string",
+                    "format": "date-time"
+                  },
+                  "end": {
+                    "type": "string",
+                    "format": "date-time"
+                  },
+                  "added": {
+                    "type": "integer",
+                    "format": "int64",
+                    "minimum": 0
+                  },
+                  "read": {
+                    "type": "integer",
+                    "format": "int64",
+                    "minimum": 0
+                  }
+                }
+              },
+              "previous": {
+                "type": "object",
+                "required": [
+                  "start",
+                  "end",
+                  "added",
+                  "read"
+                ],
+                "properties": {
+                  "start": {
+                    "type": "string",
+                    "format": "date-time"
+                  },
+                  "end": {
+                    "type": "string",
+                    "format": "date-time"
+                  },
+                  "added": {
+                    "type": "integer",
+                    "format": "int64",
+                    "minimum": 0
+                  },
+                  "read": {
+                    "type": "integer",
+                    "format": "int64",
+                    "minimum": 0
+                  }
+                }
+              },
+              "added": {
+                "type": "object",
+                "required": [
+                  "delta",
+                  "percent"
+                ],
+                "properties": {
+                  "delta": {
+                    "type": "integer",
+                    "format": "int64"
+                  },
+                  "percent": {
+                    "type": "number",
+                    "format": "double",
+                    "nullable": true
+                  }
+                }
+              },
+              "read": {
+                "type": "object",
+                "required": [
+                  "delta",
+                  "percent"
+                ],
+                "properties": {
+                  "delta": {
+                    "type": "integer",
+                    "format": "int64"
+                  },
+                  "percent": {
+                    "type": "number",
+                    "format": "double",
+                    "nullable": true
+                  }
+                }
+              }
+            }
+          },
+          "categories": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": [
+                "name",
+                "count",
+                "backlog",
+                "archived"
+              ],
+              "properties": {
+                "name": {
+                  "type": "string"
+                },
+                "count": {
+                  "type": "integer",
+                  "format": "int64",
+                  "minimum": 0
+                },
+                "backlog": {
+                  "type": "integer",
+                  "format": "int64",
+                  "minimum": 0
+                },
+                "archived": {
+                  "type": "integer",
+                  "format": "int64",
+                  "minimum": 0
+                }
+              }
+            }
+          },
+          "domains": {
+            "type": "array",
+            "maxItems": 10,
+            "items": {
+              "type": "object",
+              "required": [
+                "name",
+                "count",
+                "backlog",
+                "archived"
+              ],
+              "properties": {
+                "name": {
+                  "type": "string"
+                },
+                "count": {
+                  "type": "integer",
+                  "format": "int64",
+                  "minimum": 0
+                },
+                "backlog": {
+                  "type": "integer",
+                  "format": "int64",
+                  "minimum": 0
+                },
+                "archived": {
+                  "type": "integer",
+                  "format": "int64",
+                  "minimum": 0
+                }
+              }
+            }
+          },
+          "unknownDomainCount": {
+            "type": "integer",
+            "format": "int64",
+            "minimum": 0
+          }
+        }
+      }
+    }
+  }
+}

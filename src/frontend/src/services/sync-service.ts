@@ -7,30 +7,24 @@ export class SyncService {
     syncStore = useSyncStore();
     configsService = new ConfigsService();
 
-    updateLastSyncStatus(source: string) {
-        console.log('updateLastSyncStatus', source);
-        axios
-            .get(`${this.configsService.backendUrl()}/sync/last/${source}`)
-            .then((response) => {
-                const data = response.data.data;
-                const syncStatus = new SyncStatus(data.date, data.records);
-
-                this.syncStore.setSyncStatus(source, syncStatus);
-            });
+    async isAvailable(): Promise<boolean> {
+        const response = await axios.get(`${this.configsService.backendUrl()}/sync/availability`);
+        return response.data.data.available === true;
     }
 
-    syncFromLastSync(source: string) {
-        console.log('syncFromLastSync', source);
+    async updateLastSyncStatus(): Promise<SyncStatus> {
+        const response = await axios.get(`${this.configsService.backendUrl()}/sync/last/READER`);
+        return this.storeStatus(response.data.data);
+    }
 
-        axios
-            .post(`${this.configsService.backendUrl()}/sync/last/${source}`)
-            .then((response) => {
-                const data = response.data.data;
+    async syncFromLastSync(): Promise<SyncStatus> {
+        const response = await axios.post(`${this.configsService.backendUrl()}/sync/last/READER`);
+        return this.storeStatus(response.data.data);
+    }
 
-                const date = new Date(Date.parse(data.date));
-                const syncStatus = new SyncStatus(date, data.records);
-
-                this.syncStore.setSyncStatus(source, syncStatus);
-            });
+    private storeStatus(data: { date: string | null; records: number }): SyncStatus {
+        const status = new SyncStatus(data.date ? new Date(data.date) : undefined, data.records);
+        this.syncStore.setSyncStatus("READER", status);
+        return status;
     }
 }

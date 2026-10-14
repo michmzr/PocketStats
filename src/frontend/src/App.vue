@@ -12,7 +12,6 @@
           </ul>
         </div>
 
-        <TopAuth></TopAuth>
       </nav>
     </div>
   </div>
@@ -22,13 +21,3 @@
     </div>
   </main>
 </template>
-<script>
-import {defineComponent} from "vue";
-import TopAuth from "@/components/TopAuth.vue";
-
-export default defineComponent({
-  components: {
-    TopAuth
-  },
-});
-</script>

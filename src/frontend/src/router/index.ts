@@ -1,7 +1,5 @@
 import {createRouter, createWebHashHistory} from 'vue-router'
 import HomeView from '../views/HomeView.vue'
-import {AuthorizationService} from "@/services/authorization-service";
-import {SyncService} from "@/services/sync-service";
 
 const routes = [
   {
@@ -14,13 +12,6 @@ const routes = [
 const router = createRouter({
   history: createWebHashHistory(),
   routes
-})
-
-router.beforeResolve((to, from, next) => {
-  new AuthorizationService().updateAuthorizationState();
-  new SyncService().updateLastSyncStatus("POCKET");
-  new SyncService().updateLastSyncStatus("READER");
-  next()
 })
 
 export default router

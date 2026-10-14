@@ -4,16 +4,6 @@ logging:
   level:
     eu.cybershu: DEBUG
 
-auth:
-  pocket:
-    url:
-      request: https://getpocket.com/v3/oauth/request
-      authorize_app: https://getpocket.com/auth/authorize
-      access_token: https://getpocket.com/v3/oauth/authorize
-      get: https://getpocket.com/v3/get
-    consumer-key: ${POCKET_CONSUMER_KEY}
-    redirect_uri: ${VUE_APP_BACKEND_URL:http://localhost:8081}/pocket/auth/token
-
 management.endpoints.enabled-by-default: false
 
 server:
@@ -39,7 +29,7 @@ spring:
       authentication-database: admin
       auto-index-creation: true
       database: ${MONGODB_DB:db}
-      uri: "mongodb+srv://db-user:mnj0pYRuglcOKvl5@cluster0.wdgepgr.mongodb.net/?retryWrites=true&w=majority"
+      uri: ${MONGODB_URI}
 
 resilience4j.ratelimiter:
   instances:

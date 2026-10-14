@@ -1,5 +1,5 @@
 <template>
-  <div v-if="authorized" class="card">
+  <div class="card">
     <div v-if="loadedData" class="card-body">
       <h5 class="card-title">Stats per time period</h5>
 
@@ -31,33 +31,23 @@
 
 <script lang="ts">
 import {Vue} from "vue-class-component";
-import {useSessionStore, useSyncStore} from "@/store";
+import {useSyncStore} from "@/store";
 import {StatsService} from "@/services/stats-service";
 import {ItemsStatsAggregated, ItemsStatsPerPeriod, TimePeriod} from "@/models/stats-models";
 import {format, parseISO} from "date-fns";
 
 export default class StatsPerPeriod extends Vue {
-  authorized: Boolean = false
   loadedData: boolean = false
 
-  sessionStore = useSessionStore()
   statsService = new StatsService()
   syncStore = useSyncStore()
 
   itemsStats: ItemsStatsPerPeriod[] = [];
 
-  isAuthorized() {
-    this.authorized = this.sessionStore.isAuthorized
-  }
-
   mounted() {
     this.loadedData = false
 
-    this.isAuthorized()
-
-    this.sessionStore.$subscribe((mutation, state) => {
-      this.authorized = state.authorized
-    })
+    this.loadStats()
 
     this.syncStore.$subscribe(() => {
       console.debug(`Got sync store change - reloading component data`)
