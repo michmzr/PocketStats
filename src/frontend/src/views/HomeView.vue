@@ -7,6 +7,12 @@
 
   <div class="row mt-2">
     <div class="col">
+      <LibraryAnalytics></LibraryAnalytics>
+    </div>
+  </div>
+
+  <div class="row mt-2">
+    <div class="col">
       <DailyStatsChart></DailyStatsChart>
     </div>
   </div>
@@ -41,6 +47,7 @@
 <script lang="ts">
 import {Options, Vue} from 'vue-class-component';
 import DailyStatsChart from "@/components/DailyStatsChart.vue";
+import LibraryAnalytics from "@/components/LibraryAnalytics.vue";
 import SyncPanel from "@/components/SyncPanel.vue";
 import TopTags from "@/components/TopTags.vue";
 import LangStats from "@/components/LangStats.vue";
@@ -55,6 +62,7 @@ import {HeatmapType} from "@/models/stats-models";
     }
   },
   components: {
+    LibraryAnalytics,
     SyncPanel,
     LangStats,
     TopTags,

@@ -42,3 +42,35 @@ by Readwise causes a synchronization error.
 `POST /sync/last/POCKET` returns HTTP 410 without modifying stored data.
 `GET /sync/last/POCKET` continues to return historical synchronization status.
 Pocket authentication endpoints have been removed.
+
+## Library statistics
+
+The homepage includes backlog count and age, median time to archive, consecutive
+period comparison, category ranking and the top 10 domains. The source selector
+includes both retained sources by default and can restrict the panel to Readwise
+or historical Pocket records. These statistics remain available without a
+Readwise key. Highlights, notes and deleted items are excluded.
+
+Backlog age uses full days since addition, split into 0–30, 31–90, 91–180 and
+181+ days. Missing or future addition dates have unknown age. Archive delay uses
+valid addition and archive timestamps; the panel displays its sample size and
+the number of omitted records. The imported Reader archive timestamp comes from
+last_moved_at for an archived document. It describes elapsed time to archival.
+
+Comparison uses rolling 7, 30 or 90 day intervals ending at the snapshot time.
+The previous interval has the same length. A zero previous count has no
+percentage baseline. Selecting a period affects only this comparison;
+backlog, age, categories and domains remain snapshots of all retained records
+in the selected source. Newsletter mailto sender domains are included alongside
+HTTP/HTTPS hosts. Missing or invalid addresses are counted separately.
+
+`GET /stats/library?days=30&source=READER` returns these statistics. Omit source
+to include both sources. Unsupported days or source return HTTP 400.
+The local contract is in [library-analytics.openapi.json](docs/api/library-analytics.openapi.json).
+The endpoint streams a read-only field projection, with no data migration or writes.
+It retains only delay values for the exact median and counters for rankings.
+
+The attached response was used as reference, not imported into the database.
+Reader's list response includes child highlights and notes as documents.[^reader-api]
+
+[^reader-api]: [Readwise Reader API documentation](https://readwise.io/reader_api).

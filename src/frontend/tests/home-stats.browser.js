@@ -24,6 +24,18 @@ async (page) => {
       case '/sync/last/READER':
         data = {date: null, records: 0};
         break;
+      case '/stats/library':
+        data = {
+          asOf: '2026-10-14T12:00:00Z', source: null,
+          backlog: {total: 0, ageBuckets: [], unknownAge: 0},
+          archiveDelay: {medianDays: null, eligibleRecords: 0, excludedRecords: 0},
+          comparison: {days: 30,
+            current: {start: '2026-09-14T12:00:00Z', end: '2026-10-14T12:00:00Z', added: 0, read: 0},
+            previous: {start: '2026-08-15T12:00:00Z', end: '2026-09-14T12:00:00Z', added: 0, read: 0},
+            added: {delta: 0, percent: null}, read: {delta: 0, percent: null}},
+          categories: [], domains: [], unknownDomainCount: 0
+        };
+        break;
       case '/stats/byDay': {
         const query = request.postDataJSON();
         requests.push(query);
@@ -103,7 +115,8 @@ async (page) => {
     if (chart.maximum < 21 || chart.size.width <= 0 || chart.size.height <= 0) {
       throw new Error('Chart is clipped or invisible');
     }
-    const rows = await page.locator('table tbody tr').evaluateAll(rows =>
+    const periodCard = page.locator('.card').filter({has: page.getByRole('heading', {name: 'Stats per time period', exact: true})});
+    const rows = await periodCard.locator('table tbody tr').evaluateAll(rows =>
       rows.map(row => [...row.querySelectorAll('td')].map(cell => cell.innerText)));
     assertEqual(rows, [
       ['This week', '12-10-2026 - 14-10-2026', '36', '11'],
@@ -138,7 +151,7 @@ async (page) => {
     if (!(await page.getByRole('cell', {name: '1234', exact: true}).isVisible())) {
       throw new Error('Mobile period table invisible');
     }
-    const tableBounds = await page.locator('table').boundingBox();
+    const tableBounds = await periodCard.locator('table').boundingBox();
     if (tableBounds.x < 0 || tableBounds.x + tableBounds.width > 390) {
       throw new Error('Mobile period table overflows the screen');
     }
