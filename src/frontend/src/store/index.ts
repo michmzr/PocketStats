@@ -1,24 +1,6 @@
 import {defineStore} from "pinia";
 import {ISyncStatus} from "@/models/sync-models";
 
-export const useSessionStore = defineStore("session", {
-  state: () => {
-    return {
-      authorized: false
-    };
-  },
-  actions: {
-    setSyncStatus(authorized: boolean) {
-      this.authorized = authorized
-    }
-  },
-  getters: {
-    isAuthorized(): boolean {
-      return this.authorized;
-    }
-  },
-});
-
 export interface SyncState {
   readers: Map<string, ISyncStatus>
 }

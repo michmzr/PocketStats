@@ -1,5 +1,5 @@
 <template>
-  <div v-if="authorized && loadedData" class="card">
+  <div v-if="loadedData" class="card">
     <div class="card-body">
       <h5 class="card-title">{{ header }}</h5>
 
@@ -13,7 +13,7 @@
 <script lang="ts">
 import {Vue} from "vue-class-component";
 import {Prop} from 'vue-property-decorator';
-import {useSessionStore, useSyncStore} from "@/store";
+import {useSyncStore} from "@/store";
 import {StatsService} from "@/services/stats-service";
 import {HeatmapType, IActivityHeatmapItem, IActivityHeatmapStats,} from "@/models/stats-models";
 
@@ -25,10 +25,8 @@ export default class HeatmapArchivedChart extends Vue {
   @Prop({type: String, default: HeatmapType.ARCHIVED})
   type!: string;
 
-  authorized: Boolean = false
-  loadedData: boolean = true
+  loadedData: boolean = false
 
-  sessionStore = useSessionStore()
   syncStore = useSyncStore()
   statsService = new StatsService()
 
@@ -61,16 +59,8 @@ export default class HeatmapArchivedChart extends Vue {
   }
   series: Object[] = []
 
-  isAuthorized() {
-    this.authorized = this.sessionStore.isAuthorized
-  }
-
   mounted() {
-    this.isAuthorized()
-
-    this.sessionStore.$subscribe((mutation, state) => {
-      this.authorized = state.authorized
-    });
+    this.refreshHeatmap()
 
     this.syncStore.$subscribe(() => {
       console.debug(`Got sync store change - reloading component data`)

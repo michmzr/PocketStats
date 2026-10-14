@@ -4,6 +4,7 @@ import eu.cybershu.pocketstats.api.ApiResponse;
 import eu.cybershu.pocketstats.db.MigrationStatus;
 import eu.cybershu.pocketstats.db.Source;
 import eu.cybershu.pocketstats.migration.ApiMigrationService;
+import eu.cybershu.pocketstats.reader.ReaderSyncConfiguration;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.*;
@@ -17,8 +18,16 @@ import java.util.Optional;
 public class SyncController {
     private final ApiMigrationService apiMigrationService;
 
-    public SyncController(ApiMigrationService apiMigrationService) {
+    private final ReaderSyncConfiguration readerSyncConfiguration;
+
+    public SyncController(ApiMigrationService apiMigrationService, ReaderSyncConfiguration readerSyncConfiguration) {
         this.apiMigrationService = apiMigrationService;
+        this.readerSyncConfiguration = readerSyncConfiguration;
+    }
+
+    @GetMapping(value = "/availability", produces = MediaType.APPLICATION_JSON_VALUE)
+    public ApiResponse<SyncAvailability> availability() {
+        return new ApiResponse<>(0, "ok", new SyncAvailability(readerSyncConfiguration.isAvailable()));
     }
 
     @GetMapping(value = "/last/{source}",

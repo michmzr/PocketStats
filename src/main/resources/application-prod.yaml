@@ -2,10 +2,6 @@ logging:
   level:
     eu.cybershu: INFO
 
-auth:
-  pocket:
-    redirect_uri: ${BACKEND_URL}/pocket/auth/token
-
 management:
   endpoints:
     web:

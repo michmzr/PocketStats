@@ -1,5 +1,5 @@
 <template>
-  <div v-if="authorized" class="card">
+  <div class="card">
     <div v-if="loadedData" class="card-body">
       <h5 class="card-title">Top {{ limitTags }} the most popular tags.</h5>
       <span v-for="item in topTags" v-bind:key="item.name" class="badge ">
@@ -11,34 +11,24 @@
 
 <script lang="ts">
 import {Vue} from "vue-class-component";
-import {useSessionStore, useSyncStore} from "@/store";
+import {useSyncStore} from "@/store";
 import {StatsService} from "@/services/stats-service";
 import {ITopTag, ITopTags} from "@/models/stats-models";
 
 export default class TopTags extends Vue {
   limitTags: number = 200
 
-  authorized: boolean = false
   loadedData: boolean = false
 
-  sessionStore = useSessionStore()
   statsService = new StatsService()
   syncStore = useSyncStore()
 
   topTags: ITopTag[] = [] as ITopTag[]
 
-  isAuthorized() {
-    this.authorized = this.sessionStore.isAuthorized;
-  }
-
   mounted() {
     this.loadedData = false;
 
-    this.isAuthorized();
-
-    this.sessionStore.$subscribe((mutation, state) => {
-      this.authorized = state.authorized;
-    });
+    this.loadTopTags()
 
     this.syncStore.$subscribe(() => {
       console.debug(`Got sync store change - reloading component data`)

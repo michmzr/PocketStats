@@ -1,11 +1,7 @@
 <template>
   <div class="row mt-2">
     <div class="col">
-      <SyncPanel :source="'POCKET'"></SyncPanel>
-    </div>
-
-    <div class="col">
-      <SyncPanel :source="'READER'"></SyncPanel>
+      <SyncPanel></SyncPanel>
     </div>
   </div>
 

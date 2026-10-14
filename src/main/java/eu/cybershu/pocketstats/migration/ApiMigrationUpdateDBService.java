@@ -2,8 +2,6 @@ package eu.cybershu.pocketstats.migration;
 
 import eu.cybershu.pocketstats.db.*;
 import eu.cybershu.pocketstats.events.EventsPublisher;
-import eu.cybershu.pocketstats.pocket.PocketApiService;
-import eu.cybershu.pocketstats.reader.api.ReaderApiService;
 import eu.cybershu.pocketstats.sync.SyncStatus;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;

@@ -1,5 +1,5 @@
 <template>
-  <div v-if="authorized" class="card">
+  <div class="card">
     <div class="card-body">
       <h5 class="card-title">Daily stats of added and read items.</h5>
 
@@ -32,7 +32,7 @@
 
 <script lang="ts">
 import {Options, Vue} from "vue-class-component";
-import {useSessionStore, useSyncStore} from "@/store";
+import {useSyncStore} from "@/store";
 import {StatsService} from "@/services/stats-service";
 import {DayStatsType, IDayStat} from "@/models/stats-models";
 import Datepicker from 'vue3-datepicker'
@@ -59,9 +59,7 @@ ChartJS.register(
   },
 })
 export default class DailyStatsChart extends Vue {
-  authorized: Boolean = false
 
-  sessionStore = useSessionStore()
   syncStore = useSyncStore()
   statsService = new StatsService()
 
@@ -112,15 +110,8 @@ export default class DailyStatsChart extends Vue {
   loadedData: boolean = false
   componentSelf = this;
 
-  isAuthorized() {
-    this.authorized = this.sessionStore.isAuthorized
-  }
-
   mounted() {
-    this.isAuthorized()
-    this.sessionStore.$subscribe((mutation, state) => {
-      this.authorized = state.authorized
-    });
+    this.onChangedDatePeriod()
 
     this.syncStore.$subscribe(() => {
       console.debug(`Got sync store change - reloading component data`)

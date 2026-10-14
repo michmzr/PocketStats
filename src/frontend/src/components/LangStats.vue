@@ -1,5 +1,5 @@
 <template>
-  <div v-if="authorized" class="card">
+  <div class="card">
     <div class="card-body">
       <h5 class="card-title">Languages popularity</h5>
 
@@ -12,7 +12,7 @@
 
 <script lang="ts">
 import {Options, Vue} from "vue-class-component";
-import {useSessionStore, useSyncStore} from "@/store";
+import {useSyncStore} from "@/store";
 import {Pie} from "vue-chartjs";
 import {ILangStats} from "@/models/stats-models";
 import {StatsService} from "@/services/stats-service";
@@ -24,8 +24,6 @@ ChartJS.register(ArcElement, Tooltip, Legend)
   components: {Pie},
 })
 export default class LangStats extends Vue {
-  authorized: Boolean = false;
-  sessionStore = useSessionStore();
   syncStore = useSyncStore()
 
   loadedData: boolean = false;
@@ -48,18 +46,10 @@ export default class LangStats extends Vue {
 
   statsService: StatsService = new StatsService()
 
-  isAuthorized() {
-    this.authorized = this.sessionStore.isAuthorized;
-  }
-
   mounted() {
     this.loadedData = false;
 
-    this.isAuthorized();
-
-    this.sessionStore.$subscribe((mutation, state) => {
-      this.authorized = state.authorized;
-    });
+    this.loadData()
 
     this.syncStore.$subscribe(() => {
       console.debug(`Got sync store change - reloading component data`)

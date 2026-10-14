@@ -1,90 +1,68 @@
 <template>
-  <div v-if="authorized && loadedData" :id="'SyncPanel-' + source" class="card">
+  <div id="SyncPanel-READER" class="card">
     <div class="card-body">
-      <strong>Last sync {{ source }}:</strong><span v-if="lastSync">{{ lastSyncMsg }}</span>
-
-      <b-button variant="link" :disabled="syncing"
-                size="sm" v-on:click="sync">
-        <span v-if="!syncing">
-          <font-awesome-icon icon="spinner"/>
-          Sync {{source}}
-        </span>
-        <span v-if="syncing">
-          <b-spinner small type="grow"></b-spinner>
-           Loading
-        </span>
-      </b-button>
+      <span v-if="!loadedData">Checking Readwise synchronization...</span>
+      <template v-else>
+        <strong>Last sync Readwise:</strong> <span>{{ lastSyncMsg }}</span>
+        <b-button v-if="available" variant="link" :disabled="syncing"
+                  size="sm" v-on:click="sync">
+          <span v-if="!syncing">Sync Readwise</span>
+          <span v-else>
+            <b-spinner small type="grow"></b-spinner>
+            Loading
+          </span>
+        </b-button>
+        <p v-if="!available && !error" class="mb-0">
+          Readwise synchronization is not configured.
+        </p>
+      </template>
+      <p v-if="error" role="alert" class="text-danger mb-0">{{ error }}</p>
     </div>
   </div>
 </template>
 
 <script lang="ts">
 import {Vue} from "vue-class-component";
-import {SyncState, useSessionStore, useSyncStore} from "@/store";
 import {SyncStatus} from "@/models/sync-models";
 import {SyncService} from "@/services/sync-service";
 import {formatRelative} from "date-fns";
-import {Prop} from "vue-property-decorator";
-import {SubscriptionCallbackMutation} from "pinia";
 
 export default class SyncPanel extends Vue {
+  available = false;
+  syncing = false;
+  loadedData = false;
+  error: string | null = null;
+  lastSync: SyncStatus | null = null;
+  syncService = new SyncService();
 
-  @Prop({type: String, required: true})
-  source!: string;
-
-  authorized: boolean = false;
-  sessionStore = useSessionStore();
-  syncStore = useSyncStore();
-  syncing: boolean = false;
-  loadedData: boolean = false;
-
-  lastSync: SyncStatus | undefined = undefined;
-  lastSyncMsg: string | undefined;
-
-  syncService: SyncService = new SyncService();
-
-  selfComponent = this;
-
-  isAuthorized() {
-    this.authorized = this.sessionStore.isAuthorized;
-  }
-
-  mounted() {
-    this.selfComponent = this;
-
-    this.isAuthorized();
-
-    this.sessionStore.$subscribe((mutation, state) => {
-      this.authorized = state.authorized;
-    });
-
-    this.syncStore.$subscribe((mutation, state: SyncState) => this.onSynced(mutation, state));
-  }
-
-  sync() {
-    console.log("Syncing items from " + this.source);
-    this.syncing = true;
-    this.syncService.syncFromLastSync(this.source);
-  }
-
-  onSynced(mutation: SubscriptionCallbackMutation<SyncState>, state: SyncState) {
-    console.debug(`[${this.source}] Got change in sync store`);
-
-    this.syncing = false;
-    this.lastSyncMsg = undefined;
-
-    this.lastSync = state.readers.get(this.source);
-    this.lastSyncMsg = this.genSyncMsg();
-    this.loadedData = true;
-  }
-
-  genSyncMsg(): string {
-    if (this.lastSync == undefined || this.lastSync.date == undefined) {
-      return "Never.";
-    } else {
-      const lastDate = new Date(this.lastSync.date)
-      return formatRelative(lastDate, new Date()) + ", synchronized items: " + this.lastSync.records;
+  async mounted() {
+    try {
+      this.available = await this.syncService.isAvailable();
+      this.lastSync = await this.syncService.updateLastSyncStatus();
+    } catch {
+      this.error = "Could not load Readwise synchronization status. Reload the page to try again.";
+    } finally {
+      this.loadedData = true;
     }
+  }
+
+  async sync() {
+    if (!this.available || this.syncing) return;
+    this.syncing = true;
+    this.error = null;
+    try {
+      this.lastSync = await this.syncService.syncFromLastSync();
+    } catch {
+      this.error = "Readwise synchronization failed. Please try again.";
+    } finally {
+      this.syncing = false;
+    }
+  }
+
+  get lastSyncMsg(): string {
+    if (!this.lastSync || !this.lastSync.date) return "Never.";
+    return formatRelative(this.lastSync.date, new Date())
+        + ", synchronized items: " + this.lastSync.records;
   }
 }
 </script>

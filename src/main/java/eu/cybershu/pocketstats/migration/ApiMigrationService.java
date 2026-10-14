@@ -2,22 +2,19 @@ package eu.cybershu.pocketstats.migration;
 
 import eu.cybershu.pocketstats.db.*;
 import eu.cybershu.pocketstats.events.EventsPublisher;
-import eu.cybershu.pocketstats.pocket.PocketApiService;
+import eu.cybershu.pocketstats.reader.ReaderSyncConfiguration;
 import eu.cybershu.pocketstats.reader.api.Category;
-import eu.cybershu.pocketstats.reader.api.Location;
 import eu.cybershu.pocketstats.reader.api.ReaderApiService;
-import eu.cybershu.pocketstats.reader.api.ReadwiseFetchParams;
 import eu.cybershu.pocketstats.sync.SyncStatus;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import org.springframework.http.HttpStatus;
+import org.springframework.web.server.ResponseStatusException;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.io.IOException;
 import java.time.Instant;
 import java.util.*;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ExecutionException;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
@@ -26,7 +23,7 @@ import java.util.stream.Stream;
 @Service
 public class ApiMigrationService {
     private final MigrationStatusRepository migrationStatusRepository;
-    private final PocketApiService pocketApiService;
+    private final ReaderSyncConfiguration readerSyncConfiguration;
     private final ReaderApiService readerApiService;
     private final ItemRepository itemRepository;
 
@@ -35,124 +32,50 @@ public class ApiMigrationService {
     private static final int BATCH_SIZE = 1000;
 
     public ApiMigrationService(MigrationStatusRepository migrationStatusRepository,
-                               PocketApiService pocketApiService, ReaderApiService readerApiService,
-                               ItemRepository itemRepository, EventsPublisher eventsPublisher) {
+                               ReaderApiService readerApiService,
+                               ItemRepository itemRepository, EventsPublisher eventsPublisher,
+                               ReaderSyncConfiguration readerSyncConfiguration) {
         this.migrationStatusRepository = migrationStatusRepository;
-        this.pocketApiService = pocketApiService;
+        this.readerSyncConfiguration = readerSyncConfiguration;
         this.readerApiService = readerApiService;
         this.itemRepository = itemRepository;
         this.eventsPublisher = eventsPublisher;
     }
 
+    @SneakyThrows
     @Transactional
     public SyncStatus importAllFromSinceLastUpdate(Source source) {
-        log.info("Migrating ALL sources from last sync for {}", source);
-
-        CompletableFuture<SyncStatus> syncFuture;
-        if(source.equals(Source.POCKET)){
-            syncFuture = CompletableFuture.supplyAsync(() -> syncSource(Source.POCKET));
-        } else if(source.equals(Source.READER)){
-            syncFuture = CompletableFuture.supplyAsync(() -> syncSource(Source.READER));
-        } else {
-            throw new IllegalArgumentException("Unknown source " + source);
-        }
-
-        CompletableFuture.allOf(syncFuture).join();
-
-        try {
-            SyncStatus syncStatus = syncFuture.get();
-
-            log.info("{} migration result: {}", source, source);
-
-            return new SyncStatus(Instant.now(),
-                    syncStatus.records(),
-                    true);
-        } catch (InterruptedException | ExecutionException e) {
-            log.error("Error getting parallelized results", e);
-
-            throw new RuntimeException("Error getting parallelized results", e);
-        }
+        requireReaderSync(source);
+        Optional<Instant> sinceWhen = lastMigrationDate(Source.READER);
+        return completeMigration(Source.READER, migrateFromReader(sinceWhen));
     }
 
     @Transactional
     public SyncStatus importAllFromSinceLastUpdate() {
-        log.info("Migrating ALL sources from last sync");
-
-        CompletableFuture<SyncStatus> pocketSyncFuture = CompletableFuture.supplyAsync(() -> syncSource(Source.POCKET));
-        CompletableFuture<SyncStatus> readerSyncFuture = CompletableFuture.supplyAsync(() -> syncSource(Source.READER));
-
-        CompletableFuture.allOf(pocketSyncFuture, readerSyncFuture).join();
-
-        try {
-            SyncStatus pocketSyncStatus = pocketSyncFuture.get();
-            SyncStatus readerSyncStatus = readerSyncFuture.get();
-
-            log.info("Import all from lat update - Pocket migration result: {}", pocketSyncStatus);
-            log.info("Import all from lat update - Reader migration result: {}", readerSyncStatus);
-
-            return new SyncStatus(Instant.now(),
-                    pocketSyncStatus.records() + readerSyncStatus.records(),
-                    true);
-        } catch (InterruptedException | ExecutionException e) {
-            log.error("Error getting parallelized results", e);
-
-            throw new RuntimeException("Error getting parallelized results", e);
-        }
-    }
-
-    private SyncStatus syncSource(Source source) {
-        Optional<Instant> lastOpt = lastMigrationDate(source);
-
-        log.info("Last migration date for {} is {}", source, lastOpt);
-
-        try {
-            if (lastOpt.isPresent()) {
-                return this.migrateSource(source, lastOpt.get());
-            } else {
-                return this.migrateAllFromSource(source);
-            }
-        } catch (Exception e) {
-            log.error("Error migrating source {}", source, e);
-
-            throw new RuntimeException("Error migrating source " + source, e);
-        }
-    }
-
-    private SyncStatus migrateAllFromSource(Source source) throws Exception {
-        log.info("Migrating all sources from beginings of time...");
-
-        List<Item> importedItems = new LinkedList<>();
-
-        if (Objects.requireNonNull(source) == Source.POCKET) {
-            importedItems = this.pocketApiService.importAll();
-        } else if (source == Source.READER) {
-            importedItems = migrateFromReader(Optional.empty());
-        }
-
-        return completeMigration(source, importedItems);
+        return importAllFromSinceLastUpdate(Source.READER);
     }
 
     @SneakyThrows
     @Transactional
     public SyncStatus migrateSource(Source source, Instant sinceWhen) {
-        log.info("Migrating pocket stats from {} to {}", source, sinceWhen);
+        requireReaderSync(source);
+        return completeMigration(Source.READER, migrateFromReader(Optional.of(sinceWhen)));
+    }
 
-        List<Item> importedItems  = Collections.emptyList();
-        if (Objects.requireNonNull(source) == Source.POCKET) {
-            importedItems = migrateFromPocket(Optional.of(sinceWhen));
-        } else if (source == Source.READER) {
-            importedItems = migrateFromReader(Optional.of(sinceWhen));
-        } else {
+    private void requireReaderSync(Source source) {
+        if (source == Source.POCKET) {
+            throw new ResponseStatusException(HttpStatus.GONE, "Pocket synchronization is no longer available");
+        }
+        if (source != Source.READER) {
             throw new IllegalArgumentException("Unknown source " + source);
         }
-
-        log.info("Got {} items from {}, saving them to DB", importedItems.size(), source);
-
-        return completeMigration(source, importedItems);
+        if (!readerSyncConfiguration.isAvailable()) {
+            throw new ResponseStatusException(HttpStatus.SERVICE_UNAVAILABLE, "Readwise synchronization is not configured");
+        }
     }
 
     private SyncStatus completeMigration(Source source, List<Item> importedItems) {
-        log.info("Compliting migration - got {} items from '{}'....", importedItems.size(), source);
+        log.info("Completing migration - got {} items from '{}'....", importedItems.size(), source);
 
         updateDB(source, importedItems);
 
@@ -167,20 +90,10 @@ public class ApiMigrationService {
         return syncStatus;
     }
 
-    private List<Item> migrateFromPocket(Optional<Instant> sinceWhen) throws IOException, InterruptedException {
-        log.info("Using pocket for migration - when {}", sinceWhen);
-
-        if (sinceWhen.isPresent()) {
-            return pocketApiService.importAllSinceWhen(sinceWhen.get());
-        } else {
-            return pocketApiService.importAll();
-        }
-    }
-
     private List<Item> migrateFromReader(Optional<Instant> sinceWhen) throws Exception {
         log.info("Using reader for migration - when {}", sinceWhen);
 
-        String accessToken = System.getenv("READER_ACCESS_TOKEN");
+        String accessToken = readerSyncConfiguration.accessToken();
 
         List<Item> items = new LinkedList<>();
         if (sinceWhen.isPresent()) {
