@@ -1,6 +1,6 @@
 declare global {
     interface Window {
-        POCKETSTATS_CONFIG?: { backendUrl: string };
+        POCKETSTATS_CONFIG?: { backendUrl: string; privateDashboard?: boolean };
     }
 }
 

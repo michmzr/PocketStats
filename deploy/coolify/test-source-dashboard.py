@@ -56,7 +56,7 @@ class DashboardRuntimeTests(unittest.TestCase):
                 name, source = self.fixture(value)
                 self.assertTrue(source.startswith("window.POCKETSTATS_CONFIG="))
                 actual = json.loads(source.removeprefix("window.POCKETSTATS_CONFIG=").strip().removesuffix(";"))
-                self.assertEqual(actual, {"backendUrl": value.removesuffix("/")})
+                self.assertEqual(actual, {"backendUrl": value.removesuffix("/"), "privateDashboard": True})
                 index = command(["docker", "exec", name, "wget", "-q", "-O", "-", "http://127.0.0.1:8080/"])
                 self.assertEqual(index.returncode, 0)
                 self.assertIn('<script src="/runtime-config.js"></script>', index.stdout)
