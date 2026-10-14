@@ -65,6 +65,7 @@ jobs:
         run: |
           python3 deploy/coolify/test-launcher.py
           python3 deploy/coolify/test-config.py
+          python3 deploy/coolify/test-source-config.py
       # Build runs tests once, packages the Vue UI and writes coverage.
       # The init script isolates MongoDB and excludes only the live Readwise test.
       - name: Build and test application

@@ -101,3 +101,26 @@ configuration managed by Coolify. A successful source build does not replace
 the deployed JAR or establish release admission. Changes to the active
 Coolify branch, pinned artifacts or deployment profile require their own
 review and runtime checks. See [the Compose profile](deploy/coolify/README.md).
+
+### Current source image profile
+
+`deploy/coolify/compose-source.yaml` is the replacement profile for the existing
+private dashboard. It reads native Coolify runtime variables and runs matched
+backend/UI images built from one master commit. The legacy JAR, launcher,
+Nginx configuration and static UI are no longer host-mounted in this profile;
+the protected dashboard marker and existing writable state mounts remain.
+New library analytics are available through the read-only proxy. The private
+profile reports synchronization unavailable and continues to deny writes.
+
+The manual `Build PocketStats source images` workflow builds both images on
+GitHub, verifies their runtime configuration and scans complete images.
+Fixable HIGH/CRITICAL vulnerabilities and secret matches block publication by default.
+The owner-approved private deployment exception can be explicitly selected
+for this manual run until 2026-10-21; secrets still block and scan evidence is retained.
+Only admitted images are pushed with immutable `sha-<commit>` tags; no moving
+release channel is promoted. Image digests and sanitized scan/SBOM evidence
+are attached to the run. Select these digests as `POCKETSTATS_RUNTIME_IMAGE`
+and `POCKETSTATS_PROXY_IMAGE`, pin the tested Git revision and select
+`/compose-source.yaml` in Coolify only after admission. Retain the previous
+profile, pinned revision and images for rollback. A successful source build
+alone does not authorize replacing the live pair.

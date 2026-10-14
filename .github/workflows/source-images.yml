@@ -1,0 +1,99 @@
+name: Build PocketStats source images
+
+on:
+  workflow_dispatch:
+    inputs:
+      accept_owner_exception:
+        description: 'Apply owner-approved private deployment vulnerability exception until 2026-10-21 (secrets still block)'
+        type: boolean
+        required: true
+        default: false
+
+permissions:
+  contents: read
+
+concurrency:
+  group: pocketstats-source-images
+  cancel-in-progress: false
+
+jobs:
+  candidate:
+    if: github.repository == 'michmzr/PocketStats' && github.ref == 'refs/heads/master'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    permissions:
+      contents: read
+      packages: write
+    env:
+      VUE_APP_BACKEND_URL: ''
+      OWNER_EXCEPTION: ${{ inputs.accept_owner_exception }}
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          persist-credentials: false
+      - uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: src/frontend/package-lock.json
+      - uses: gradle/actions/setup-gradle@v6
+      - name: Install locked frontend dependencies
+        working-directory: src/frontend
+        run: npm ci --no-audit --no-fund
+      - name: Build current source and check deployment contract
+        run: |
+          ./gradlew --no-daemon bootJar -x npmInstall
+          python3 deploy/coolify/test-source-config.py
+      - name: Install verified scanner
+        run: bash deploy/coolify/install-trivy.sh
+      - name: Build matched source images
+        run: |
+          docker build --label org.opencontainers.image.source=https://github.com/michmzr/PocketStats --label org.opencontainers.image.revision="$GITHUB_SHA" -f deploy/coolify/APP.Dockerfile -t pocketstats:verify .
+          docker build --label org.opencontainers.image.source=https://github.com/michmzr/PocketStats --label org.opencontainers.image.revision="$GITHUB_SHA" -f deploy/coolify/DASHBOARD.Dockerfile -t pocketstats-dashboard:verify .
+          docker run --rm --network none --entrypoint /bin/sh pocketstats:verify -c 'test -r /usr/lib/pocketstats/app.jar && /usr/bin/java -version && /usr/bin/python3 --version && test "$(id -u):$(id -g)" = 999:982'
+          docker run --rm --network none --read-only --cap-drop ALL --security-opt no-new-privileges:true -e MONGODB_URI=mongodb://fixture.invalid/test -e MONGODB_DB=test -e POCKET_CONSUMER_KEY=fixture -e READER_ACCESS_TOKEN=fixture --entrypoint /usr/bin/python3 pocketstats:verify -I /usr/local/libexec/pocketstats-launch --check-config-only
+          python3 deploy/coolify/test-source-dashboard.py pocketstats-dashboard:verify
+      - name: Scan complete images and create SBOMs
+        run: |
+          mkdir -p security-reports
+          status=0
+          exception=()
+          if [ "$OWNER_EXCEPTION" = true ]; then exception=(--owner-exception-20261014); fi
+          for image in pocketstats pocketstats-dashboard; do
+            trivy image --scanners vuln,secret --ignore-unfixed --format json --output "$RUNNER_TEMP/$image.scan.json" "$image:verify"
+            python3 deploy/coolify/check-source-scan.py "$RUNNER_TEMP/$image.scan.json" "security-reports/$image.scan.json" "${exception[@]}" || status=1
+            trivy image --format cyclonedx --output "security-reports/$image.sbom.json" "$image:verify"
+          done
+          exit "$status"
+      - name: Log in for admitted immutable publication
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Publish immutable source images without changing release channels
+        run: |
+          for image in pocketstats pocketstats-dashboard; do
+            candidate="ghcr.io/michmzr/$image:sha-$GITHUB_SHA"
+            docker tag "$image:verify" "$candidate"
+            docker push "$candidate"
+            digest=$(docker inspect --format '{{ index .RepoDigests 0 }}' "$candidate")
+            case "$digest" in "ghcr.io/michmzr/$image@sha256:"*) ;; *) exit 1 ;; esac
+            docker pull "$digest"
+            test "$(docker inspect --format '{{ index .Config.Labels "org.opencontainers.image.revision" }}' "$digest")" = "$GITHUB_SHA"
+            printf '%s\n' "$digest" > "security-reports/$image.digest"
+            python3 deploy/coolify/bind-sbom.py "security-reports/$image.sbom.json" "$digest"
+            echo "$digest (source $GITHUB_SHA)" >> "$GITHUB_STEP_SUMMARY"
+          done
+      - name: Retain sanitized admission evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: source-image-evidence
+          path: security-reports/
+          if-no-files-found: ignore
+          retention-days: 14
