@@ -1,6 +1,10 @@
 name: Build PocketStats source images
 
 on:
+  workflow_run:
+    workflows: [PocketStats CI]
+    types: [completed]
+    branches: [master]
   workflow_dispatch:
     inputs:
       accept_owner_exception:
@@ -18,7 +22,12 @@ concurrency:
 
 jobs:
   candidate:
-    if: github.repository == 'michmzr/PocketStats' && github.ref == 'refs/heads/master'
+    if: >-
+      github.repository == 'michmzr/PocketStats' &&
+      ((github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/master') ||
+       (github.event_name == 'workflow_run' && github.event.workflow_run.conclusion == 'success' &&
+        github.event.workflow_run.event == 'push' && github.event.workflow_run.head_branch == 'master' &&
+        github.event.workflow_run.head_repository.full_name == github.repository))
     runs-on: ubuntu-24.04
     timeout-minutes: 30
     permissions:
@@ -26,11 +35,13 @@ jobs:
       packages: write
     env:
       VUE_APP_BACKEND_URL: ''
-      OWNER_EXCEPTION: ${{ inputs.accept_owner_exception }}
+      OWNER_EXCEPTION: ${{ github.event_name == 'workflow_run' || inputs.accept_owner_exception }}
+      SOURCE_REVISION: ${{ github.event.workflow_run.head_sha || github.sha }}
     steps:
       - uses: actions/checkout@v5
         with:
           persist-credentials: false
+          ref: ${{ env.SOURCE_REVISION }}
       - uses: actions/setup-java@v6
         with:
           distribution: temurin
@@ -52,8 +63,9 @@ jobs:
         run: bash deploy/coolify/install-trivy.sh
       - name: Build matched source images
         run: |
-          docker build --label org.opencontainers.image.source=https://github.com/michmzr/PocketStats --label org.opencontainers.image.revision="$GITHUB_SHA" -f deploy/coolify/APP.Dockerfile -t pocketstats:verify .
-          docker build --label org.opencontainers.image.source=https://github.com/michmzr/PocketStats --label org.opencontainers.image.revision="$GITHUB_SHA" -f deploy/coolify/DASHBOARD.Dockerfile -t pocketstats-dashboard:verify .
+          contract=$(sha256sum deploy/coolify/compose-source.yaml deploy/coolify/pocketstats-launch deploy/coolify/nginx-source.conf deploy/coolify/dashboard-start deploy/coolify/APP.Dockerfile deploy/coolify/DASHBOARD.Dockerfile | sha256sum | cut -d' ' -f1)
+          docker build --label org.pocketstats.deployment-contract="$contract" --label org.opencontainers.image.source=https://github.com/michmzr/PocketStats --label org.opencontainers.image.revision="$SOURCE_REVISION" -f deploy/coolify/APP.Dockerfile -t pocketstats:verify .
+          docker build --label org.pocketstats.deployment-contract="$contract" --label org.opencontainers.image.source=https://github.com/michmzr/PocketStats --label org.opencontainers.image.revision="$SOURCE_REVISION" -f deploy/coolify/DASHBOARD.Dockerfile -t pocketstats-dashboard:verify .
           docker run --rm --network none --entrypoint /bin/sh pocketstats:verify -c 'test -r /usr/lib/pocketstats/app.jar && /usr/bin/java -version && /usr/bin/python3 --version && test "$(id -u):$(id -g)" = 999:982'
           docker run --rm --network none --read-only --cap-drop ALL --security-opt no-new-privileges:true -e MONGODB_URI=mongodb://fixture.invalid/test -e MONGODB_DB=test -e POCKET_CONSUMER_KEY=fixture -e READER_ACCESS_TOKEN=fixture --entrypoint /usr/bin/python3 pocketstats:verify -I /usr/local/libexec/pocketstats-launch --check-config-only
           python3 deploy/coolify/test-source-dashboard.py pocketstats-dashboard:verify
@@ -77,17 +89,26 @@ jobs:
           password: ${{ secrets.GITHUB_TOKEN }}
       - name: Publish immutable source images without changing release channels
         run: |
+          test "$(git ls-remote origin refs/heads/master | cut -f1)" = "$SOURCE_REVISION"
           for image in pocketstats pocketstats-dashboard; do
-            candidate="ghcr.io/michmzr/$image:sha-$GITHUB_SHA"
+            candidate="ghcr.io/michmzr/$image:sha-$SOURCE_REVISION"
             docker tag "$image:verify" "$candidate"
             docker push "$candidate"
             digest=$(docker inspect --format '{{ index .RepoDigests 0 }}' "$candidate")
             case "$digest" in "ghcr.io/michmzr/$image@sha256:"*) ;; *) exit 1 ;; esac
             docker pull "$digest"
-            test "$(docker inspect --format '{{ index .Config.Labels "org.opencontainers.image.revision" }}' "$digest")" = "$GITHUB_SHA"
+            test "$(docker inspect --format '{{ index .Config.Labels "org.opencontainers.image.revision" }}' "$digest")" = "$SOURCE_REVISION"
             printf '%s\n' "$digest" > "security-reports/$image.digest"
             python3 deploy/coolify/bind-sbom.py "security-reports/$image.sbom.json" "$digest"
-            echo "$digest (source $GITHUB_SHA)" >> "$GITHUB_STEP_SUMMARY"
+            echo "$digest (source $SOURCE_REVISION)" >> "$GITHUB_STEP_SUMMARY"
+          done
+      - name: Promote matched channels after trusted master CI
+        if: github.event_name == 'workflow_run'
+        run: |
+          test "$(git ls-remote origin refs/heads/master | cut -f1)" = "$SOURCE_REVISION"
+          for image in pocketstats pocketstats-dashboard; do
+            digest=$(cat "security-reports/$image.digest")
+            docker buildx imagetools create --tag "ghcr.io/michmzr/$image:coolify-dev" "$digest"
           done
       - name: Retain sanitized admission evidence
         if: always()

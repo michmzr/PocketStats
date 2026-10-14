@@ -25,6 +25,6 @@ esac
 url=${url%/}
 
 mkdir -p /tmp/pocketstats-ui
-printf 'window.POCKETSTATS_CONFIG={"backendUrl":"%s","privateDashboard":true};\n' "$url" \
+printf 'window.POCKETSTATS_CONFIG={"backendUrl":"%s","privateDashboard":false};\n' "$url" \
     > /tmp/pocketstats-ui/runtime-config.js
 exec nginx -c /etc/nginx/nginx.conf -g 'daemon off;'

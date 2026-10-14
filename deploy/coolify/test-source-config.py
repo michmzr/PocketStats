@@ -61,7 +61,7 @@ class SourceConfigurationTests(unittest.TestCase):
         self.assertFalse(marker['bind']['create_host_path'])
 
     def test_new_library_reads_and_sync_denial(self):
-        self.assertEqual(self.proxy.count('proxy_pass '), 6)
+        self.assertEqual(self.proxy.count('proxy_pass '), 9)
         for name in ('langs', 'byPeriods', 'topTags', 'heatmap', 'byDay', 'library'):
             start = self.proxy.index('location = /stats/' + name + ' {')
             end = self.proxy.find('location ', start + 1)
@@ -71,8 +71,10 @@ class SourceConfigurationTests(unittest.TestCase):
             self.assertIn('proxy_set_header Cookie "";', block)
         availability = self.proxy.split('location = /sync/availability {')[1].split('}')[0]
         self.assertIn('limit_except GET', availability)
-        self.assertIn('"available":false', self.proxy)
-        self.assertNotIn('proxy_pass http://pocketstats:18080/pocketstats/sync', self.proxy)
+        self.assertIn('proxy_pass http://pocketstats:18080/pocketstats/sync/availability;', self.proxy)
+        self.assertIn('limit_except GET POST', self.proxy)
+        self.assertIn('if ($reject_sync_write) { return 403; }', self.proxy)
+        self.assertIn('\"POST:1\" 0;', self.proxy)
         self.assertRegex(self.proxy, r'location /\s*\{\s*return 403;\s*\}')
 
 if __name__ == '__main__':

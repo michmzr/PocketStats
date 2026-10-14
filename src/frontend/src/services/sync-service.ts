@@ -18,7 +18,8 @@ export class SyncService {
     }
 
     async syncFromLastSync(): Promise<SyncStatus> {
-        const response = await axios.post(`${this.configsService.backendUrl()}/sync/last/READER`);
+        const response = await axios.post(`${this.configsService.backendUrl()}/sync/last/READER`, undefined,
+            {headers: {"X-PocketStats-Sync": "1"}});
         return this.storeStatus(response.data.data);
     }
 
