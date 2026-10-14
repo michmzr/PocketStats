@@ -1,0 +1,14 @@
+// CI uses an ephemeral MongoDB service, never Atlas or a real Readwise account.
+gradle.projectsEvaluated {
+    allprojects {
+        tasks.withType(Test).configureEach {
+            exclude 'eu/cybershu/pocketstats/reader/api/ReaderApiServiceTest*'
+            systemProperty 'spring.autoconfigure.exclude',
+                    'de.flapdoodle.embed.mongo.spring.autoconfigure.EmbeddedMongoAutoConfiguration'
+            systemProperty 'spring.data.mongodb.uri',
+                    System.getenv('MONGODB_URI') ?: 'mongodb://127.0.0.1:27017/pocketstats_ci'
+            systemProperty 'spring.data.mongodb.database', 'pocketstats_ci'
+            systemProperty 'spring.data.mongodb.port', '27017'
+        }
+    }
+}

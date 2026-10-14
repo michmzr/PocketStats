@@ -1,61 +1,96 @@
 name: PocketStats CI
 
-on: [push, pull_request]
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
   cancel-in-progress: true
 
 jobs:
-  tests:
-    runs-on: ubuntu-latest
-    environment: master
+  checks:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    services:
+      mongodb:
+        image: mongo:8.0
+        ports:
+          - 27017:27017
+        options: >-
+          --health-cmd "mongosh --quiet --eval 'db.adminCommand({ping: 1})'"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      READER_ACCESS_TOKEN: ''
+      MONGODB_URI: mongodb://127.0.0.1:27017/pocketstats_ci
+      MONGODB_DB: pocketstats_ci
+      VUE_APP_BACKEND_URL: ''
     steps:
       - name: Checkout code
         uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
       - name: Set up Java
         uses: actions/setup-java@v6
         with:
-          distribution: 'temurin'
+          distribution: temurin
           java-version: '17'
-          check-latest: true
-      - uses: actions/setup-node@v4
+      - name: Set up Node
+        uses: actions/setup-node@v4
         with:
-          node-version: 16
-      - name: Setup Gradle
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: src/frontend/package-lock.json
+      - name: Set up Gradle
         uses: gradle/actions/setup-gradle@v6
-      - name: gradle build & static code analysis
-        shell: bash
-        env:
-          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-          READER_ACCESS_TOKEN: ${{ secrets.READER_ACCESS_TOKEN }}
-        run: |
-          ./gradlew build jacocoTestReport sonar --info -Dsonar.organization=michmzr  -Dsonar.projectKey=michmzr_PocketStats  -Dsonar.host.url=https://sonarcloud.io  -Dsonar.verbose=true
-  build:
-    needs:
-     - tests
-    runs-on: ubuntu-latest
-    environment: master
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v5
-      - name: Set up Java
-        uses: actions/setup-java@v6
         with:
-          distribution: 'temurin'
-          java-version: '17'
-          check-latest: false
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 16
-      - name: Setup Gradle
-        uses: gradle/actions/setup-gradle@v6
-      - name: build backend
-        shell: bash
+          cache-read-only: ${{ github.event_name == 'pull_request' || github.ref != 'refs/heads/master' }}
+      # npm ci matches the existing lockfile; this slice does not migrate it.
+      - name: Install locked frontend dependencies
+        working-directory: src/frontend
+        run: npm ci --no-audit --no-fund
+      - name: Lint frontend without modifying source
+        working-directory: src/frontend
+        run: npm run lint -- --no-fix
+      - name: Check frontend types
+        working-directory: src/frontend
+        run: npx --no-install tsc --noEmit
+      - name: Verify private Coolify launcher and Compose contract
         run: |
-          ./gradlew  build -x test
-      - name: Upload backend JAR artifact
+          python3 deploy/coolify/test-launcher.py
+          python3 deploy/coolify/test-config.py
+      # Build runs tests once, packages the Vue UI and writes coverage.
+      # The init script isolates MongoDB and excludes only the live Readwise test.
+      - name: Build and test application
+        run: ./gradlew --no-daemon --init-script .github/ci.gradle build jacocoTestReport -x npmInstall
+      - name: Upload test and coverage reports
+        if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: app.jar
-          path: ./build/libs/app.jar
+          name: test-reports
+          path: |
+            build/test-results/test/*.xml
+            build/reports/tests/test/
+            build/reports/jacoco/test/
+          if-no-files-found: ignore
+          retention-days: 7
+      - name: Analyze trusted default branch with Sonar
+        if: github.event_name == 'push' && github.ref == 'refs/heads/master' && vars.SONAR_ENABLED == 'true'
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+        run: |
+          test -n "$SONAR_TOKEN"
+          ./gradlew --no-daemon sonar \
+            -Dsonar.organization=michmzr \
+            -Dsonar.projectKey=michmzr_PocketStats \
+            -Dsonar.host.url=https://sonarcloud.io
+      - name: Record deployment ownership
+        run: |
+          echo 'CI checks source only. Coolify owns deployment of the private Compose stack.' >> "$GITHUB_STEP_SUMMARY"
+          echo 'No JAR upload, SSH deployment, systemd restart or production health request is performed.' >> "$GITHUB_STEP_SUMMARY"

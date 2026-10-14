@@ -74,3 +74,30 @@ The attached response was used as reference, not imported into the database.
 Reader's list response includes child highlights and notes as documents.[^reader-api]
 
 [^reader-api]: [Readwise Reader API documentation](https://readwise.io/reader_api).
+
+## CI and Coolify deployment
+
+GitHub Actions checks pushes, pull requests and manual runs with Java 17, the
+Gradle wrapper and Node 22. Frontend dependencies use `npm ci` with the existing
+`package-lock.json`; the Gradle frontend install task is excluded to preserve that
+locked install. Checks include frontend lint and types, backend build/tests,
+JaCoCo coverage and the offline private-dashboard launcher/Compose tests.
+
+`.github/ci.gradle` disables embedded MongoDB and points Spring tests at the
+disposable MongoDB 8 service, isolated from Atlas. The live
+`ReaderApiServiceTest` requires a real Readwise account and is excluded from
+secret-free CI; run it separately with a dedicated test-account token. No
+application credentials are required by the standard CI job. Only test and
+coverage reports are uploaded; the application JAR is not published.
+
+Optional SonarCloud analysis runs only after successful checks on pushes to
+`master`, when repository variable `SONAR_ENABLED=true` and repository secret
+`SONAR_TOKEN` are configured. It is not run for pull requests or manual runs.
+
+Coolify owns deployment. Actions does not copy a JAR over SSH, restart systemd,
+call a deployment webhook or probe a production URL. The private Compose
+profile uses separately staged protected host artifacts and runtime-only
+configuration managed by Coolify. A successful source build does not replace
+the deployed JAR or establish release admission. Changes to the active
+Coolify branch, pinned artifacts or deployment profile require their own
+review and runtime checks. See [the Compose profile](deploy/coolify/README.md).
