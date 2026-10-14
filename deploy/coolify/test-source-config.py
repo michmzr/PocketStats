@@ -60,7 +60,7 @@ class SourceConfigurationTests(unittest.TestCase):
         self.assertTrue(marker['read_only'])
         self.assertFalse(marker['bind']['create_host_path'])
 
-    def test_new_library_reads_and_sync_denial(self):
+    def test_new_library_reads_and_readwise_defaults(self):
         self.assertEqual(self.proxy.count('proxy_pass '), 9)
         for name in ('langs', 'byPeriods', 'topTags', 'heatmap', 'byDay', 'library'):
             start = self.proxy.index('location = /stats/' + name + ' {')

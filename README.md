@@ -109,10 +109,12 @@ private dashboard. It reads native Coolify runtime variables and runs matched
 backend/UI images built from one master commit. The legacy JAR, launcher,
 Nginx configuration and static UI are no longer host-mounted in this profile;
 the protected dashboard marker and existing writable state mounts remain.
-New library analytics are available through the read-only proxy. The private
-profile reports synchronization unavailable and continues to deny writes.
+Library analytics remain readable through the private proxy. Readwise
+availability, history and manual synchronization are enabled by default;
+retired Pocket and unlisted API operations remain denied.
 
-The manual `Build PocketStats source images` workflow builds both images on
+The `Build PocketStats source images` workflow follows successful master CI
+and also supports manual dispatch. It builds both images on
 GitHub, verifies their runtime configuration and scans complete images.
 Fixable HIGH/CRITICAL vulnerabilities and secret matches block publication by default.
 The owner-approved private deployment exception can be explicitly selected
