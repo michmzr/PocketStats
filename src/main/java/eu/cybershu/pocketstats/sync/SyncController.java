@@ -9,7 +9,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.*;
 
-import java.io.IOException;
 import java.util.Optional;
 
 @Slf4j
@@ -20,19 +19,21 @@ public class SyncController {
 
     private final ReaderSyncConfiguration readerSyncConfiguration;
 
-    public SyncController(ApiMigrationService apiMigrationService, ReaderSyncConfiguration readerSyncConfiguration) {
+    public SyncController(ApiMigrationService apiMigrationService,
+                          ReaderSyncConfiguration readerSyncConfiguration) {
         this.apiMigrationService = apiMigrationService;
         this.readerSyncConfiguration = readerSyncConfiguration;
     }
 
     @GetMapping(value = "/availability", produces = MediaType.APPLICATION_JSON_VALUE)
     public ApiResponse<SyncAvailability> availability() {
-        return new ApiResponse<>(0, "ok", new SyncAvailability(readerSyncConfiguration.isAvailable()));
+        return new ApiResponse<>(0, "ok",
+                new SyncAvailability(readerSyncConfiguration.isAvailable()));
     }
 
     @GetMapping(value = "/last/{source}",
             produces = MediaType.APPLICATION_JSON_VALUE)
-    public ApiResponse<SyncStatus> lastSync(@PathVariable("source")  Source source) {
+    public ApiResponse<SyncStatus> lastSync(@PathVariable Source source) {
         log.info("Checking last migration for {}", source);
 
         Optional<MigrationStatus> lastMigrationOpt = apiMigrationService.lastMigration(source);
@@ -57,7 +58,7 @@ public class SyncController {
 
     @PostMapping(value = "/last",
             produces = MediaType.APPLICATION_JSON_VALUE)
-    public ApiResponse<SyncStatus> lastFromLastSync() throws IOException, InterruptedException {
+    public ApiResponse<SyncStatus> lastFromLastSync() {
         log.debug("importing from last sync...");
 
         var result = apiMigrationService.importAllFromSinceLastUpdate();
@@ -67,7 +68,7 @@ public class SyncController {
 
     @PostMapping(value = "/last/{source}",
             produces = MediaType.APPLICATION_JSON_VALUE)
-    public ApiResponse<SyncStatus> lastFromLastSync(@PathVariable("source")  Source source) throws IOException, InterruptedException {
+    public ApiResponse<SyncStatus> lastFromLastSync(@PathVariable Source source) {
         log.debug("importing from last sync {}", source);
 
         var result = apiMigrationService.importAllFromSinceLastUpdate(source);
