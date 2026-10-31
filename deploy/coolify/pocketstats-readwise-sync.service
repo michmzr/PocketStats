@@ -1,0 +1,15 @@
+[Unit]
+Description=Synchronize PocketStats statistics from Readwise
+Wants=network-online.target
+After=network-online.target docker.service
+
+[Service]
+Type=oneshot
+ExecStart=/usr/bin/python3 -I /usr/local/libexec/pocketstats-readwise-sync.py
+TimeoutStartSec=360
+DynamicUser=yes
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+RestrictAddressFamilies=AF_INET AF_INET6

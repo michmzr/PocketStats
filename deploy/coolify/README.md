@@ -24,6 +24,39 @@ Local unit verification: `python3 deploy/coolify/test-launcher.py` and `python3 
 
 Prepare a stopped Coolify candidate first. During a reviewed short target handoff, stop only the old target JVM and release only its host UI site/port; no overlapping target JVMs. After candidate stats/private/read/restart gates pass, retire host autostart and reconcile its Ansible enable/start playbook before enabling Coolify recovery. On failure, stop candidate and verify exited before restoring old target unit/site. Whole-host reboot and bounded recovery remain separate unverified gates.
 
+## Daily Readwise synchronization
+
+`pocketstats-readwise-sync.timer` runs daily at 18:00 `Europe/Warsaw`. systemd
+handles Polish summer/winter time independently of the host's UTC clock.[^systemd-time]
+`Persistent=true` catches up a missed run when the timer resumes after downtime.
+The service checks Readwise availability, calls the existing incremental import
+through `127.0.0.1:18081` and validates the JSON success result. It needs no token
+of its own. Timer instances cannot overlap; manual imports through the UI are
+not serialized by this host service. Failed or timed-out imports are not retried
+automatically because the backend may still be processing the original request.
+
+Install on the dashboard host from this directory:
+
+```sh
+sudo install -m 0644 readwise-sync.py /usr/local/libexec/pocketstats-readwise-sync.py
+sudo install -m 0644 pocketstats-readwise-sync.service pocketstats-readwise-sync.timer /etc/systemd/system/
+sudo systemd-analyze verify /etc/systemd/system/pocketstats-readwise-sync.service /etc/systemd/system/pocketstats-readwise-sync.timer
+sudo systemctl daemon-reload
+sudo systemctl start pocketstats-readwise-sync.service
+sudo systemctl enable --now pocketstats-readwise-sync.timer
+systemctl list-timers pocketstats-readwise-sync.timer
+journalctl -u pocketstats-readwise-sync.service -n 20 --no-pager
+```
+
+Run runner regression checks with `python3 deploy/coolify/test-readwise-sync.py`
+from the repository root. Disable future imports with
+`sudo systemctl disable --now pocketstats-readwise-sync.timer`; this does not
+cancel an import already in progress. The host units survive container releases
+and host reboots. Application images and the release reconciler are unchanged.
+
+[^systemd-time]: [systemd calendar time zones](https://www.freedesktop.org/software/systemd/man/latest/systemd.time.html)
+    and [timer options](https://www.freedesktop.org/software/systemd/man/latest/systemd.timer.html).
+
 ## Loopback publication and host firewall prerequisite
 
 On Docker29.8.1, a bounded synthetic Nginx fixture was healthy inside an internal-only bridge but had no effective published port and refused host loopback HTTP. The same fixture on a noninternal bridge published the requested loopback port and returned200. Both disposable networks/containers were removed. Internal network membership alone does not establish host published-port reachability.

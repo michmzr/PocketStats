@@ -144,3 +144,9 @@ an import. The private proxy allows GET availability, GET/POST `/sync/last/READE
 and default POST `/sync/last`. Write requests require `X-PocketStats-Sync: 1`,
 which the UI sends; cross-site form writes and preflight requests are denied.
 Retired Pocket authentication/synchronization remains unavailable.
+
+The server-side `pocketstats-readwise-sync.timer` runs an incremental Readwise
+import daily at 18:00 `Europe/Warsaw`, including daylight-saving changes. It
+uses the existing loopback proxy and runtime token; no owner computer or new
+credentials are required. Missed runs are caught up when the timer resumes.
+See [timer installation and operation](deploy/coolify/README.md#daily-readwise-synchronization).
